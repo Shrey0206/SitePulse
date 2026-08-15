@@ -11,11 +11,15 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "migrate:up": "node-pg-migrate up",
+    "migrate:down": "node-pg-migrate down",
+    "migrate:create": "node-pg-migrate create -j sql"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "node-pg-migrate": "^9.0.0",
     "pg": "^8.23.0"
   },
   "devDependencies": {
