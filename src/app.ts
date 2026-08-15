@@ -1,3 +1,4 @@
+import cookieParser from 'cookie-parser';
 import express from 'express';
 import { pool } from './db/pool.js';
 import { authRouter } from './modules/auth/auth.routes.js';
@@ -6,6 +7,7 @@ import { errorHandler, notFoundHandler } from './shared/middlewares/errorHandler
 export const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.get('/health', async (_req, res) => {
   try {
