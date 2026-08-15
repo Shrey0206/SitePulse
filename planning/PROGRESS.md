@@ -4,6 +4,27 @@ Read this file first at the start of every session. Update it at the end of ever
 
 ---
 
+## Days 2–7 — 2026-08-15 (Week 1 complete)
+
+**Status:** Full Week 1 vertical slice works end-to-end and is test-covered: signup → login → refresh/rotate/logout → create/list/get/update/delete monitors, all multi-tenant-scoped. Railway deploy for this update is still owner-driven and not done.
+
+**What's done:**
+- **Day 2** — `organizations`/`users`/`refresh_tokens` migrated via `node-pg-migrate` (raw SQL, up/down both verified). Added a reusable `set_updated_at()` trigger, reused again on `monitors` in Day 6.
+- **Day 3** — Signup (org + user in one transaction, slug collision resolved via `SAVEPOINT`/retry, not a precheck race) and login, both issuing a 15m JWT access token. Login compares against a dummy bcrypt hash when the email doesn't exist, so response timing can't be used to enumerate accounts.
+- **Day 4** — Refresh token issuance/rotation/reuse-detection/logout. **Caught and fixed a real bug via manual testing, not inspection:** the reuse-detection branch revoked the whole token family but then threw, and the function's own generic `catch { ROLLBACK }` was undoing that exact revocation before it could commit — reuse detection was silently a no-op. Fixed by explicitly committing the revocation before throwing and tracking transaction state so the generic rollback only fires when there's actually something uncommitted. Also closed a benign-double-submit race with `SELECT ... FOR UPDATE` so two concurrent refreshes on the same token can't both succeed.
+- **Day 5** — `requireAuth` middleware (verifies the Bearer token, attaches `req.auth = {userId, orgId}`); `GET /api/v1/organizations/me` as the first org-scoped query, template for everything after it.
+- **Day 6** — Monitors CRUD. `timeout_seconds <= interval_seconds` enforced at two layers: Zod on full payloads, a DB `CHECK` constraint as the backstop for partial updates Zod can't cross-validate against the existing row (a `23514` now maps to a clean 400, not a 500). Every query scopes by `(id, organization_id)` together, so cross-org access 404s identically to a nonexistent id — verified with two orgs directly.
+- **Day 7** — Vitest + Supertest, dedicated `sitepulse_test` DB (`docker/init-test-db.sql` for fresh clones; created manually this session since the running container's volume predates it), truncate-based reset in a shared `beforeEach` (`DECISIONS.md` #24). `fileParallelism: false` in `vitest.config.ts` — the truncate strategy shares one DB across test files, so parallel files would race each other's resets. Added `tsconfig.test.json` + `npm run typecheck` since the base `tsconfig.json` only covers `src/` and Vitest's esbuild transpile doesn't type-check. 16 tests, all passing: auth (signup, duplicate email, slug collision, login success/failure, malformed input, refresh rotation, reuse detection kills the whole family, logout), monitors (create defaults, auth required, URL scheme, cross-field validation on create *and* on partial update via the CHECK constraint, full cross-tenant CRUD isolation), and one explicit vertical-slice test.
+
+**What's half-done / not started:**
+- Railway deploy of this update — owner-driven (needs `railway login`), same as Day 1.
+
+**Known issues:** None outstanding — the Day 4 reuse-detection bug above was caught and fixed in this same session, before commit.
+
+**Next session:** Deploy to Railway if not already done, then start Week 2 / Day 8 — in-process scheduler (interval loop, batched concurrent checks, per-monitor overlap skip, partition maintenance, `/health` cycle-staleness reporting).
+
+---
+
 ## Day 1 — 2026-08-15
 
 **Status:** Repo scaffolded and working end-to-end locally. Railway deploy not done yet — needs the account owner to log in.

@@ -10,6 +10,9 @@ services:
       - '5432:5432'
     volumes:
       - sitepulse_pgdata:/var/lib/postgresql/data
+      # Only runs on first container init against a fresh volume -- see
+      # PROGRESS.md Day 7 for how to create sitepulse_test on an existing one.
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
 
 volumes:
   sitepulse_pgdata:

@@ -9,11 +9,11 @@ Read `PROJECT.md` and `DECISIONS.md` before Day 1. Read `PROGRESS.md` and today'
 ## Week 1 — Foundation, Auth, Monitors (Days 1–7)
 
 - [ ] **Day 1** — Repo setup: TypeScript + Express skeleton, ESLint/Prettier, env config, Postgres connection via `node-postgres`, health-check endpoint. Deploy bare-bones "hello world" to Railway.
-- [ ] **Day 2** — Database schema v1: `organizations` (incl. unique `slug` — see `DECISIONS.md` #34), `users`, `refresh_tokens` (incl. `family_id`, `revoked_at`, `replaced_by_token_id` — see `DECISIONS.md` #31). Write raw SQL migrations run via `node-pg-migrate` (`DECISIONS.md` #30, no ORM).
-- [ ] **Day 3** — Auth: signup (creates the user's org in the same transaction, slug auto-generated from org name with collision retry — `DECISIONS.md` #34) + login (bcrypt password hashing — `DECISIONS.md` #22), JWT access token issuance (memory-only on the client, `Authorization` header — `DECISIONS.md` #18).
-- [ ] **Day 4** — Auth: refresh token flow (issue, rotate, store hashed in Postgres, `httpOnly`/`Secure`/`SameSite=Strict` cookie — `DECISIONS.md` #18), reuse detection (revoke token family on reuse — `DECISIONS.md` #31), logout/revocation. *Natural split point if this overflows: (4a) issue/rotate/store/cookie, (4b) reuse detection + logout/revocation — see Notes.*
-- [ ] **Day 5** — Multi-tenancy scaffolding: `organization_id` on all relevant tables, middleware to scope every query by the authenticated user's org.
-- [ ] **Day 6** — Monitors CRUD: schema (`monitors` table incl. `failure_threshold`, `recovery_threshold`, interval, URL, expected status), REST endpoints, validation.
+- [x] **Day 2** — Database schema v1: `organizations` (incl. unique `slug` — see `DECISIONS.md` #34), `users`, `refresh_tokens` (incl. `family_id`, `revoked_at`, `replaced_by_token_id` — see `DECISIONS.md` #31). Write raw SQL migrations run via `node-pg-migrate` (`DECISIONS.md` #30, no ORM).
+- [x] **Day 3** — Auth: signup (creates the user's org in the same transaction, slug auto-generated from org name with collision retry — `DECISIONS.md` #34) + login (bcrypt password hashing — `DECISIONS.md` #22), JWT access token issuance (memory-only on the client, `Authorization` header — `DECISIONS.md` #18).
+- [x] **Day 4** — Auth: refresh token flow (issue, rotate, store hashed in Postgres, `httpOnly`/`Secure`/`SameSite=Strict` cookie — `DECISIONS.md` #18), reuse detection (revoke token family on reuse — `DECISIONS.md` #31), logout/revocation. *Natural split point if this overflows: (4a) issue/rotate/store/cookie, (4b) reuse detection + logout/revocation — see Notes.*
+- [x] **Day 5** — Multi-tenancy scaffolding: `organization_id` on all relevant tables, middleware to scope every query by the authenticated user's org.
+- [x] **Day 6** — Monitors CRUD: schema (`monitors` table incl. `failure_threshold`, `recovery_threshold`, interval, URL, expected status), REST endpoints, validation.
 - [ ] **Day 7** — Write basic tests for auth + monitors CRUD. Confirm Week 1 vertical slice works end-to-end (signup → login → create monitor). Deploy update to Railway.
 
 ## Week 2 — Checker, Incidents, Alerts (Days 8–14)
