@@ -4,6 +4,29 @@ Read this file first at the start of every session. Update it at the end of ever
 
 ---
 
+## Day 1 — 2026-08-15
+
+**Status:** Repo scaffolded and working end-to-end locally. Railway deploy not done yet — needs the account owner to log in.
+
+**What's done:**
+- Git repo initialized. Planning docs moved into `planning/` to keep the repo root focused on code.
+- TypeScript + Express skeleton (`src/app.ts`, `src/index.ts`), `tsconfig.json` (strict mode)
+- ESLint (flat config, `typescript-eslint`) + Prettier configured, both run clean
+- Env config via `dotenv` (`src/config/env.ts`, `.env.example` committed, `.env` gitignored)
+- Postgres connection pool via `node-postgres` (`src/db/pool.ts`)
+- `GET /health` — checks DB connectivity, returns `200 {status: "ok"}` or `503` if the DB is unreachable. (This is the Day 1 liveness/DB-connectivity version — `DECISIONS.md` #13's fuller "checker cycle staleness" health check lands on Day 8 once the scheduler exists.)
+- Local Postgres via `docker-compose.yml` (postgres:16, named volume). Verified locally: `npm run dev` + `curl /health` → `200 {"status":"ok"}`.
+- `railway.json` committed (Nixpacks build via `npm run build`, start via `npm start`) so the app is deploy-ready.
+
+**What's half-done / not started:**
+- Actual Railway deploy — needs the account owner to run `railway login`, `railway init`, attach a Postgres plugin, set `DATABASE_URL`/`PORT` env vars, and `railway up`. Not something I can do without their account access.
+
+**Known issues:** None.
+
+**Next session:** Finish the Railway deploy (owner-driven), then start Day 2 — database schema v1 (`organizations`, `users`, `refresh_tokens`) via `node-pg-migrate`.
+
+---
+
 ## Day 0.4 — 2026-08-14 (Planning)
 
 **Status:** Third review pass, specifically checking whether the #18–31 fixes themselves introduced or exposed new gaps. They did — one real future outage bug, one doc-vs-decision contradiction, one long-open item finally closed, plus several smaller design gaps. Still no code written.
