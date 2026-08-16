@@ -28,13 +28,13 @@ Read `PROJECT.md` and `DECISIONS.md` before Day 1. Read `PROGRESS.md` and today'
 
 ## Week 3 — Status Pages, Real-Time, API Polish, Frontend (Days 15–21)
 
-- [ ] **Day 15** — Public status page backend: read-only endpoint per organization, no auth required, aggregates current monitor status.
-- [ ] **Day 16** — SSE endpoint for live monitor status, authenticated via a short-lived single-use ticket (`POST /api/v1/sse/ticket` → `EventSource` with `?ticket=`, since `EventSource` can't send an `Authorization` header — see `DECISIONS.md` #27); server force-closes each connection after ~15 min so a logged-out session's stream can't run forever (`DECISIONS.md` #35); frontend subscribes and updates without refresh, re-fetching a ticket on reconnect rather than relying on native retry.
-- [ ] **Day 17** — API versioning (`/api/v1`), API-key auth for programmatic access (`sp_live_...`, SHA-256 hashed + stored prefix, full-access/non-expiring for v1 — `DECISIONS.md` #29, #37), rate limiting (`trust proxy` set for Railway's edge proxy, IP-keyed for session traffic / key-ID-keyed for API-key traffic — `DECISIONS.md` #25).
-- [ ] **Day 18** — OpenAPI/Swagger spec + docs UI for the full API surface built so far.
-- [ ] **Day 19** — Frontend scaffold: React + Vite + TypeScript, API client wrapper (fetch + JWT + refresh-on-401), SSE provider with Context/useReducer (see `UI_TECH_DECISIONS.md`). Monitor dashboard (list, status, create/edit) — functional, not fancy.
-- [ ] **Day 20** — Frontend: incident timeline + public status page view.
-- [ ] **Day 21** — Frontend: alert/notification settings page. Checkpoint: is there time for anything beyond core scope? If not, move directly to Week 4.
+- [x] **Day 15** — Public status page backend: read-only endpoint per organization, no auth required, aggregates current monitor status.
+- [x] **Day 16** — SSE endpoint for live monitor status, authenticated via a short-lived single-use ticket (`POST /api/v1/sse/ticket` → `EventSource` with `?ticket=`, since `EventSource` can't send an `Authorization` header — see `DECISIONS.md` #27); server force-closes each connection after ~15 min so a logged-out session's stream can't run forever (`DECISIONS.md` #35); frontend subscribes and updates without refresh, re-fetching a ticket on reconnect rather than relying on native retry.
+- [x] **Day 17** — API versioning (`/api/v1`), API-key auth for programmatic access (`sp_live_...`, SHA-256 hashed + stored prefix, full-access/non-expiring for v1 — `DECISIONS.md` #29, #37), rate limiting (`trust proxy` set for Railway's edge proxy, IP-keyed for session traffic / key-ID-keyed for API-key traffic — `DECISIONS.md` #25).
+- [x] **Day 18** — OpenAPI/Swagger spec + docs UI for the full API surface built so far.
+- [x] **Day 19** — Frontend scaffold: React + Vite + TypeScript, API client wrapper (fetch + JWT + refresh-on-401), SSE provider with Context/useReducer (see `UI_TECH_DECISIONS.md`). Monitor dashboard (list, status, create/edit) — functional, not fancy.
+- [x] **Day 20** — Frontend: incident timeline + public status page view.
+- [x] **Day 21** — Frontend: alert/notification settings page. Checkpoint: is there time for anything beyond core scope? If not, move directly to Week 4.
 
 ## Week 4 — Testing, Load Testing, Deployment, Docs (Days 22–30)
 

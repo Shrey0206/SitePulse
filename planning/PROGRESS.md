@@ -4,6 +4,40 @@ Read this file first at the start of every session. Update it at the end of ever
 
 ---
 
+## Days 15–21 — 2026-08-16 (Week 3 complete)
+
+**Status:** The product is feature-complete for v1 and works end-to-end through a real UI. 134 backend tests pass. Railway deploy still owner-driven and not done.
+
+**What's done:**
+- **Day 15** — Public status page backend (`/api/v1/status/:slug`), unauthenticated, with 24h uptime computed in one lateral join and a 15s cache header.
+- **Day 16** — SSE with single-use ticket auth, 15-minute forced close, org-scoped fan-out, heartbeats, and `X-Accel-Buffering: no`.
+- **Day 17** — API keys (`sp_live_`, SHA-256 + prefix) and two-tier rate limiting (IP for sessions, key ID for programmatic), with `trust proxy` set to 1.
+- **Day 18** — Hand-written OpenAPI 3.1 spec + Swagger UI, with a drift test that calls every documented operation.
+- **Days 19–21** — React frontend: monitors dashboard (live via SSE), incident timeline, alert settings with delivery log, settings/API keys, and the public status page.
+
+**Bugs and issues found this week:**
+1. **API-key rate limiter allowed IPv6 bypass.** `express-rate-limit` warned that the custom `keyGenerator` used `req.ip` raw. A raw IPv6 address is one of the /64 a client typically controls, so a caller could rotate addresses for unlimited fresh buckets. Now normalised via `ipKeyGenerator`. Found incidentally while debugging something else — worth noting that the library warned and nothing else would have.
+2. **Rate limiter mounted in the wrong position.** The key-keyed limiter was placed after the routers, where it never runs for matched routes. It has to sit inside each router, after auth populates `req.auth`.
+3. **OpenAPI drift test initially found zero routes.** Express 5 replaced `layer.regexp` with `matchers` and drops the mount path, so walking the router stack silently reported the entire spec as stale. Replaced with probing real routes, which is both more robust and a stronger check.
+4. **SSE tests leaked unhandled socket errors.** Aborting an SSE request surfaces an error supertest's own handler never sees. Fixed by using a real listening server so the socket can be torn down deliberately.
+
+**Two client-side subtleties worth remembering (both stem from backend design working correctly):**
+- Concurrent 401s had to share one in-flight refresh. Because refresh tokens rotate, two parallel refreshes make the second look like token reuse — which the server correctly treats as theft and answers by revoking the whole family. The dashboard loading monitors and incidents together would have triggered it every time.
+- The access token is memory-only, so routing holds a `restoring` state during the silent refresh on load. Without it, an authenticated user is bounced to `/login` on every hard refresh.
+
+**Verified end-to-end against the running stack:** signup → httpOnly path-scoped refresh cookie → monitors going up and down → incident auto-opened → alert fired → public status page reporting `degraded` with correct per-service uptime → live SSE `monitor_status_changed` event arriving on a real connection.
+
+**What's half-done / not started:** Week 4 (Days 22–30) — expanded edge-case tests, k6 load testing, deployment hardening, architecture diagram, README, demo video.
+
+**Known gaps carried forward:**
+- **Railway deploy has never been run.** Every "deploy update" checkpoint in Weeks 1–3 is outstanding. This needs the account owner.
+- Monitor detail page (`/dashboard/monitors/:id`) from `UI_DESIGN.md` §3 is not built — no response-time chart or paginated check history. The dashboard, incident timeline, alert settings and status page are all done. Called out rather than quietly dropped; Day 21's checkpoint explicitly allows deciding scope here.
+- No frontend tests. Backend coverage is 134 tests; the UI has been verified manually end-to-end but has no automated coverage.
+
+**Next session:** Day 22 — expand backend test coverage for edge cases, then k6 load testing on Days 23–24.
+
+---
+
 ## Days 8–14 — 2026-08-16 (Week 2 complete)
 
 **Status:** The full monitoring pipeline works end-to-end — checks run on schedule, drive a persisted state machine, open/resolve incidents as a standing invariant, and fire deduplicated alerts over email and signed webhooks. 86 tests pass. Railway deploy still owner-driven and not done.
