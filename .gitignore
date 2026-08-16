@@ -5,3 +5,9 @@ dist/
 .env.test
 *.log
 coverage/
+
+# Frontend build output and deps (web/ has its own package.json).
+web/node_modules/
+web/dist/
+tsconfig.tsbuildinfo
+web/*.tsbuildinfo

@@ -13,6 +13,7 @@ import { sseRouter } from './modules/sse/sse.routes.js';
 import { statusPagesRouter } from './modules/statuspages/statuspages.routes.js';
 import { errorHandler, notFoundHandler } from './shared/middlewares/errorHandler.js';
 import { authRateLimiter, publicRateLimiter, sessionRateLimiter } from './shared/middlewares/rateLimit.js';
+import { serveFrontend } from './shared/middlewares/serveFrontend.js';
 
 export const app = express();
 
@@ -57,6 +58,10 @@ app.use('/api/v1/incidents', sessionRateLimiter, incidentsRouter);
 app.use('/api/v1/alerts', sessionRateLimiter, alertsRouter);
 app.use('/api/v1/keys', sessionRateLimiter, apiKeysRouter);
 app.use('/api/v1/sse', sessionRateLimiter, sseRouter);
+
+// After every API route, so /api/* 404s stay JSON, but before the 404 handler so
+// client-side routes resolve to the SPA shell.
+serveFrontend(app);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

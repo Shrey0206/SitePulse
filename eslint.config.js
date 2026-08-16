@@ -7,7 +7,9 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   prettier,
   {
-    ignores: ['dist/', 'node_modules/'],
+    // The frontend has its own toolchain and its own tsconfig; this config is for the
+    // backend, and pointing it at web/ would lint browser code with Node globals.
+    ignores: ['dist/', 'node_modules/', 'web/'],
   },
   {
     rules: {

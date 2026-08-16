@@ -1,6 +1,7 @@
 import { pool } from '../../db/pool.js';
 import { AppError } from '../../shared/errors/AppError.js';
 import { isCheckViolation } from '../../shared/utils/db-errors.js';
+import type { MonitorStatus } from '../checker/checker.state-machine.js';
 import type { CreateMonitorInput, UpdateMonitorInput } from './monitors.schemas.js';
 
 interface MonitorRow {
@@ -13,6 +14,8 @@ interface MonitorRow {
   expected_status: number;
   failure_threshold: number;
   recovery_threshold: number;
+  status: MonitorStatus;
+  last_checked_at: Date | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -27,6 +30,9 @@ export interface Monitor {
   expectedStatus: number;
   failureThreshold: number;
   recoveryThreshold: number;
+  /** Current state-machine status; the dashboard renders this until SSE supersedes it. */
+  status: MonitorStatus;
+  lastCheckedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +48,8 @@ function toMonitor(row: MonitorRow): Monitor {
     expectedStatus: row.expected_status,
     failureThreshold: row.failure_threshold,
     recoveryThreshold: row.recovery_threshold,
+    status: row.status,
+    lastCheckedAt: row.last_checked_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
