@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import { AppError } from '../../shared/errors/AppError.js';
 import { requireParam } from '../../shared/utils/params.js';
 import * as channelsService from './alerts.channels.service.js';
+import { encryptSecret, generateWebhookSecret } from './alerts.crypto.js';
 import {
   createChannelSchema,
   listDeliveriesQuerySchema,
@@ -11,15 +11,25 @@ import {
 export async function createChannelHandler(req: Request, res: Response) {
   const input = createChannelSchema.parse(req.body);
 
-  if (input.type === 'webhook') {
-    // Webhook channels need an encrypted signing secret, which lands with Day 13. Failing
-    // loudly is the right call -- silently storing a webhook with no secret would produce
-    // unsigned callouts that receivers can't verify.
-    throw new AppError(501, 'NOT_IMPLEMENTED', 'Webhook channels are not available yet');
+  if (input.type !== 'webhook') {
+    const channel = await channelsService.createChannel(req.auth!.orgId, input);
+    res.status(201).json({ success: true, data: { channel } });
+    return;
   }
 
-  const channel = await channelsService.createChannel(req.auth!.orgId, input);
-  res.status(201).json({ success: true, data: { channel } });
+  const secret = generateWebhookSecret();
+  const channel = await channelsService.createChannel(req.auth!.orgId, input, encryptSecret(secret));
+
+  // Returned exactly once, at creation. The receiver needs the plaintext to verify
+  // signatures, and no read endpoint ever exposes it again.
+  res.status(201).json({
+    success: true,
+    data: {
+      channel,
+      secret,
+      secretNotice: 'Store this signing secret now -- it will not be shown again.',
+    },
+  });
 }
 
 export async function listChannelsHandler(req: Request, res: Response) {

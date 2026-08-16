@@ -1,6 +1,8 @@
 import { pool } from '../../db/pool.js';
+import { decryptSecret } from './alerts.crypto.js';
 import { sendAlertEmail } from './alerts.email.js';
 import type { AlertContext, DeliveryOutcome, NotificationChannel } from './alerts.types.js';
+import { sendAlertWebhook } from './alerts.webhook.js';
 
 interface ChannelRow {
   id: string;
@@ -25,8 +27,7 @@ export async function getEnabledChannels(organizationId: string): Promise<Notifi
     type: row.type,
     target: row.target,
     enabled: row.enabled,
-    // Decryption lands with the webhook channel that needs it (Day 13).
-    secret: null,
+    secret: row.secret_encrypted ? decryptSecret(row.secret_encrypted) : null,
   }));
 }
 
@@ -56,10 +57,10 @@ async function logDelivery(
 }
 
 async function deliverTo(channel: NotificationChannel, context: AlertContext): Promise<void> {
-  // Only email is wired up today; the webhook branch lands with Day 13.
-  if (channel.type !== 'email') return;
-
-  const outcome = await sendAlertEmail(channel.target, context);
+  const outcome =
+    channel.type === 'email'
+      ? await sendAlertEmail(channel.target, context)
+      : await sendAlertWebhook(channel, context);
 
   try {
     await logDelivery(channel, context, outcome);
