@@ -14,5 +14,12 @@ services:
       # PROGRESS.md Day 7 for how to create sitepulse_test on an existing one.
       - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
 
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - '8025:8025' # web UI + REST API, for inspecting sent mail in dev/tests
+      - '1025:1025' # SMTP
+
 volumes:
   sitepulse_pgdata:
