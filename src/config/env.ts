@@ -14,4 +14,15 @@ export const env = {
   databaseUrl: requireEnv('DATABASE_URL'),
   jwtSecret: requireEnv('JWT_SECRET'),
   bcryptRounds: Number(process.env.BCRYPT_ROUNDS ?? 12),
+
+  smtpHost: process.env.SMTP_HOST ?? 'localhost',
+  smtpPort: Number(process.env.SMTP_PORT ?? 1025),
+  smtpUser: process.env.SMTP_USER,
+  smtpPassword: process.env.SMTP_PASSWORD,
+  smtpFrom: process.env.SMTP_FROM ?? 'alerts@sitepulse.local',
+
+  // AES-256-GCM key for webhook secrets at rest (DECISIONS.md #23), hex-encoded 32 bytes.
+  // Optional so the app still boots without webhooks configured; webhook creation fails
+  // loudly rather than silently storing an unencrypted secret if it's missing.
+  webhookSecretKey: process.env.WEBHOOK_SECRET_KEY,
 };

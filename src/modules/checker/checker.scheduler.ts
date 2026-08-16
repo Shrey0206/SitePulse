@@ -1,6 +1,7 @@
+import { dispatchAlerts } from '../alerts/alerts.service.js';
 import { performHttpCheck } from './checker.http.js';
 import { ensureChecksPartitions } from './checker.partitions.js';
-import { type DueMonitor, getDueMonitors, recordCheckResult } from './checker.service.js';
+import { type DueMonitor, type RecordedCheck, getDueMonitors, recordCheckResult } from './checker.service.js';
 
 const TICK_INTERVAL_MS = 5000;
 const PARTITION_MAINTENANCE_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -19,12 +20,37 @@ async function runCheck(monitor: DueMonitor): Promise<void> {
   inFlight.add(monitor.id);
   try {
     const result = await performHttpCheck(monitor);
-    await recordCheckResult(monitor.id, result);
+    const recorded = await recordCheckResult(monitor.id, result);
+
+    // Dispatched after the transaction commits, deliberately. Sending inside it would
+    // mean a later rollback leaves an alert already delivered for an incident that no
+    // longer exists -- and network I/O would hold a row lock open for its full duration.
+    await dispatchIncidentAlerts(monitor, recorded.incident);
   } catch (err) {
     console.error(`Check failed for monitor ${monitor.id}:`, err);
   } finally {
     inFlight.delete(monitor.id);
   }
+}
+
+async function dispatchIncidentAlerts(monitor: DueMonitor, incident: RecordedCheck['incident']): Promise<void> {
+  const transition = incident.opened
+    ? { incidentId: incident.opened.id, event: 'incident_opened' as const }
+    : incident.resolved
+      ? { incidentId: incident.resolved.id, event: 'incident_resolved' as const }
+      : null;
+
+  // Only the open and resolve edges alert -- never one per failing check (DECISIONS.md #8).
+  if (!transition) return;
+
+  await dispatchAlerts({
+    organizationId: monitor.organizationId,
+    incidentId: transition.incidentId,
+    event: transition.event,
+    monitorName: monitor.name,
+    monitorUrl: monitor.url,
+    occurredAt: new Date(),
+  });
 }
 
 async function tick(): Promise<void> {

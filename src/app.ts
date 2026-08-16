@@ -2,6 +2,7 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import { pool } from './db/pool.js';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { alertsRouter } from './modules/alerts/alerts.routes.js';
 import { getCheckerHealth } from './modules/checker/checker.health.js';
 import { incidentsRouter } from './modules/incidents/incidents.routes.js';
 import { monitorsRouter } from './modules/monitors/monitors.routes.js';
@@ -31,6 +32,7 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/organizations', organizationsRouter);
 app.use('/api/v1/monitors', monitorsRouter);
 app.use('/api/v1/incidents', incidentsRouter);
+app.use('/api/v1/alerts', alertsRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
