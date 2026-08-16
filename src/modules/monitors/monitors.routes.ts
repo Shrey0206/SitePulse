@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { requireAuth } from '../auth/auth.middleware.js';
+import { apiKeyRateLimiter } from '../../shared/middlewares/rateLimit.js';
+import { requireAuthOrApiKey } from '../auth/auth.middleware.js';
 import {
   createMonitorHandler,
   deleteMonitorHandler,
@@ -10,7 +11,11 @@ import {
 
 export const monitorsRouter = Router();
 
-monitorsRouter.use(requireAuth);
+// Exposed to both the dashboard (JWT) and third-party API clients (API key). The
+// key-keyed limiter runs straight after auth, once req.auth identifies which credential
+// was used.
+monitorsRouter.use(requireAuthOrApiKey);
+monitorsRouter.use(apiKeyRateLimiter);
 
 monitorsRouter.post('/', createMonitorHandler);
 monitorsRouter.get('/', listMonitorsHandler);

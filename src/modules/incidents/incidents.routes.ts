@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { requireAuth } from '../auth/auth.middleware.js';
+import { apiKeyRateLimiter } from '../../shared/middlewares/rateLimit.js';
+import { requireAuthOrApiKey } from '../auth/auth.middleware.js';
 import {
   createIncidentHandler,
   deleteIncidentHandler,
@@ -11,7 +12,8 @@ import {
 
 export const incidentsRouter = Router();
 
-incidentsRouter.use(requireAuth);
+incidentsRouter.use(requireAuthOrApiKey);
+incidentsRouter.use(apiKeyRateLimiter);
 
 incidentsRouter.post('/', createIncidentHandler);
 incidentsRouter.get('/', listIncidentsHandler);
