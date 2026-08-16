@@ -4,6 +4,36 @@ Read this file first at the start of every session. Update it at the end of ever
 
 ---
 
+## Days 8–14 — 2026-08-16 (Week 2 complete)
+
+**Status:** The full monitoring pipeline works end-to-end — checks run on schedule, drive a persisted state machine, open/resolve incidents as a standing invariant, and fire deduplicated alerts over email and signed webhooks. 86 tests pass. Railway deploy still owner-driven and not done.
+
+**What's done:**
+- **Day 8+9 (merged)** — `checks` table, monthly `RANGE`-partitioned on `checked_at`, plus the in-process scheduler. Merged because the scheduler's first startup action is partition maintenance, so shipping it before the table existed would have meant committing a scheduler that crashes on boot. 5s tick, per-monitor due logic, concurrent checks, `AbortController` timeouts, in-flight `Set` to skip overlapping checks. `/health` now reports checker liveness.
+- **Day 10** — State machine (`pending`/`up`/`suspected_down`/`down`/`suspected_up`) as a pure function, with counters persisted on `monitors` and updated in the same transaction as the check write.
+- **Day 11** — `incidents` with `source` (`auto`/`manual`), the auto-incident invariant re-asserted on every check write, and a partial unique index enforcing one open auto incident per monitor. Manual incident CRUD is fully independent.
+- **Day 12** — Incident-scoped alerting with an email channel (Nodemailer/SMTP, mailpit added to docker-compose). `alert_deliveries` logs every attempt on both channels.
+- **Day 13** — Webhook channel: AES-256-GCM-encrypted secrets, HMAC-SHA256 signatures over `timestamp.body`, single-attempt delivery with a 5s timeout.
+- **Day 14** — Flapping and consistency tests, plus checker-layer coverage (HTTP execution, due-monitor selection, partition maintenance including a year-boundary rollover).
+
+**Bugs found and fixed during the week — all three by testing, none by inspection:**
+1. **Partition creation used bind parameters.** Postgres accepts no parameters anywhere in DDL, so `CREATE TABLE ... FOR VALUES FROM ($1)` failed at runtime. The error was caught and logged and the process stayed up, so nothing looked broken — but no partitions existed, and every check insert would have failed. Fixed by interpolating shape-asserted literals.
+2. **State machine punished monitors for blips.** `suspected_down` was routed through the recovery threshold, so a monitor with one bad check needed N consecutive successes to look healthy again — in exactly the case flapping protection exists to absorb. Recovery thresholds now apply only after a confirmed `down`.
+3. **Tests had no `checks` partitions.** Tests import `app` directly and never start the scheduler, so nothing created them. Added a vitest setup file running the same maintenance the scheduler does.
+
+**Verified against the live checker, not just tests:** a monitor left down produced 7 failing checks and exactly 1 alert, then 1 more on recovery; a signed webhook arrived at a real receiver and its delivery was logged `sent`/200; the stored webhook secret column contains only ciphertext.
+
+**Known limitations (all stated in `DECISIONS.md`, not accidental):**
+- A monitor flapping through *complete* down/up cycles alerts once per cycle — no cooldown layer (#8, v1.1 scope). There's a test pinning this so it stays a known trade-off.
+- Webhook delivery is single-attempt with no retry (#23) — reliable retry needs a queue, and #4 has none.
+- In-flight checks are lost on restart (#4). Persisted counters (#19) mean state machine progress survives, but a check mid-flight does not.
+
+**What's half-done / not started:** Week 3 (Days 15–21) — status pages, SSE, API keys/rate limiting, OpenAPI, frontend.
+
+**Next session:** Day 15 — public status page backend.
+
+---
+
 ## Days 2–7 — 2026-08-15 (Week 1 complete)
 
 **Status:** Full Week 1 vertical slice works end-to-end and is test-covered: signup → login → refresh/rotate/logout → create/list/get/update/delete monitors, all multi-tenant-scoped. Railway deploy for this update is still owner-driven and not done.
