@@ -1,4 +1,5 @@
 import { dispatchAlerts } from '../alerts/alerts.service.js';
+import { broadcastToOrg } from '../sse/sse.hub.js';
 import { performHttpCheck } from './checker.http.js';
 import { ensureChecksPartitions } from './checker.partitions.js';
 import { type DueMonitor, type RecordedCheck, getDueMonitors, recordCheckResult } from './checker.service.js';
@@ -22,6 +23,8 @@ async function runCheck(monitor: DueMonitor): Promise<void> {
     const result = await performHttpCheck(monitor);
     const recorded = await recordCheckResult(monitor.id, result);
 
+    publishToDashboards(monitor, recorded);
+
     // Dispatched after the transaction commits, deliberately. Sending inside it would
     // mean a later rollback leaves an alert already delivered for an incident that no
     // longer exists -- and network I/O would hold a row lock open for its full duration.
@@ -30,6 +33,43 @@ async function runCheck(monitor: DueMonitor): Promise<void> {
     console.error(`Check failed for monitor ${monitor.id}:`, err);
   } finally {
     inFlight.delete(monitor.id);
+  }
+}
+
+/**
+ * Pushes live dashboard updates. Unlike alerting, this fires on every status change --
+ * including the suspected_* states -- because a dashboard showing "something looks wrong
+ * right now" is useful, whereas an email saying it is not (DECISIONS.md #8 vs #7).
+ *
+ * Synchronous and non-throwing: broadcasting is a best-effort write to already-open
+ * sockets, and must never fail the check that produced it.
+ */
+function publishToDashboards(monitor: DueMonitor, recorded: RecordedCheck): void {
+  if (recorded.statusChanged) {
+    broadcastToOrg(monitor.organizationId, {
+      type: 'monitor_status_changed',
+      data: {
+        monitorId: monitor.id,
+        name: monitor.name,
+        previousStatus: recorded.previousStatus,
+        status: recorded.status,
+        at: new Date().toISOString(),
+      },
+    });
+  }
+
+  if (recorded.incident.opened) {
+    broadcastToOrg(monitor.organizationId, {
+      type: 'incident_opened',
+      data: { incidentId: recorded.incident.opened.id, monitorId: monitor.id, name: monitor.name },
+    });
+  }
+
+  if (recorded.incident.resolved) {
+    broadcastToOrg(monitor.organizationId, {
+      type: 'incident_resolved',
+      data: { incidentId: recorded.incident.resolved.id, monitorId: monitor.id, name: monitor.name },
+    });
   }
 }
 

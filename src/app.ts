@@ -7,6 +7,7 @@ import { getCheckerHealth } from './modules/checker/checker.health.js';
 import { incidentsRouter } from './modules/incidents/incidents.routes.js';
 import { monitorsRouter } from './modules/monitors/monitors.routes.js';
 import { organizationsRouter } from './modules/organizations/organizations.routes.js';
+import { sseRouter } from './modules/sse/sse.routes.js';
 import { statusPagesRouter } from './modules/statuspages/statuspages.routes.js';
 import { errorHandler, notFoundHandler } from './shared/middlewares/errorHandler.js';
 
@@ -35,6 +36,7 @@ app.use('/api/v1/monitors', monitorsRouter);
 app.use('/api/v1/incidents', incidentsRouter);
 app.use('/api/v1/alerts', alertsRouter);
 app.use('/api/v1/status', statusPagesRouter);
+app.use('/api/v1/sse', sseRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
