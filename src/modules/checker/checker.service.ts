@@ -1,5 +1,9 @@
 import { pool } from '../../db/pool.js';
 import type { CheckResult } from './checker.http.js';
+import {
+  type IncidentTransition,
+  enforceAutoIncidentInvariant,
+} from '../incidents/incidents.invariant.js';
 import { type MonitorStatus, nextState } from './checker.state-machine.js';
 
 export interface DueMonitor {
@@ -50,13 +54,14 @@ export interface RecordedCheck {
   previousStatus: MonitorStatus;
   status: MonitorStatus;
   statusChanged: boolean;
+  incident: IncidentTransition;
 }
 
 /**
- * Writes the check, advances the state machine, and persists the new counters as one
- * transaction (DECISIONS.md #19) -- a crash between the check insert and the counter
- * update would otherwise leave the state machine disagreeing with the check history it's
- * derived from.
+ * Writes the check, advances the state machine, persists the new counters, and re-asserts
+ * the auto-incident invariant as one transaction (DECISIONS.md #19, #28) -- a crash
+ * partway through would otherwise leave the state machine disagreeing with the check
+ * history it's derived from, or an outage recorded with no incident to show for it.
  */
 export async function recordCheckResult(monitorId: string, result: CheckResult): Promise<RecordedCheck> {
   const client = await pool.connect();
@@ -68,13 +73,16 @@ export async function recordCheckResult(monitorId: string, result: CheckResult):
     // mechanism -- it also covers a second process (a future instance, or a test) writing
     // a check for the same monitor concurrently.
     const monitorResult = await client.query<{
+      organization_id: string;
+      name: string;
       status: MonitorStatus;
       consecutive_failures: number;
       consecutive_successes: number;
       failure_threshold: number;
       recovery_threshold: number;
     }>(
-      `SELECT status, consecutive_failures, consecutive_successes, failure_threshold, recovery_threshold
+      `SELECT organization_id, name, status, consecutive_failures, consecutive_successes,
+              failure_threshold, recovery_threshold
        FROM monitors WHERE id = $1 FOR UPDATE`,
       [monitorId],
     );
@@ -82,7 +90,12 @@ export async function recordCheckResult(monitorId: string, result: CheckResult):
     if (!monitor) {
       // Deleted mid-check. Not an error worth failing the cycle over -- drop the result.
       await client.query('ROLLBACK');
-      return { previousStatus: 'pending', status: 'pending', statusChanged: false };
+      return {
+        previousStatus: 'pending',
+        status: 'pending',
+        statusChanged: false,
+        incident: { opened: null, resolved: null },
+      };
     }
 
     await client.query(
@@ -113,9 +126,19 @@ export async function recordCheckResult(monitorId: string, result: CheckResult):
       [monitorId, next.status, next.consecutiveFailures, next.consecutiveSuccesses, next.statusChanged],
     );
 
+    // Re-asserted on every check write, not just when next.statusChanged is true -- that's
+    // the whole point of modelling this as an invariant (#28). A monitor sitting at 'down'
+    // whose incident was manually resolved has no further transition coming, so an
+    // edge-triggered version would never reopen it.
+    const incident = await enforceAutoIncidentInvariant(
+      client,
+      { id: monitorId, organizationId: monitor.organization_id, name: monitor.name },
+      next.status,
+    );
+
     await client.query('COMMIT');
 
-    return { previousStatus, status: next.status, statusChanged: next.statusChanged };
+    return { previousStatus, status: next.status, statusChanged: next.statusChanged, incident };
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;
