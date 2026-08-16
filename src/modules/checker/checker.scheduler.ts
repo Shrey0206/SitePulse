@@ -93,6 +93,12 @@ async function dispatchIncidentAlerts(monitor: DueMonitor, incident: RecordedChe
   });
 }
 
+// A tick runs every 5s, so an outage that lasts minutes would otherwise emit hundreds of
+// identical stack dumps and bury everything else in the log -- including whatever is
+// needed to diagnose the outage. Collapse consecutive identical failures into a count.
+let consecutiveTickFailures = 0;
+let lastTickErrorMessage: string | null = null;
+
 async function tick(): Promise<void> {
   try {
     const due = await getDueMonitors();
@@ -108,8 +114,25 @@ async function tick(): Promise<void> {
 
     await Promise.all(toRun.map(runCheck));
     lastCycleCompletedAt = new Date();
+
+    if (consecutiveTickFailures > 0) {
+      console.info(`Scheduler recovered after ${consecutiveTickFailures} failed tick(s)`);
+      consecutiveTickFailures = 0;
+      lastTickErrorMessage = null;
+    }
   } catch (err) {
-    console.error('Scheduler tick failed:', err);
+    const message = err instanceof Error ? err.message : String(err);
+    consecutiveTickFailures += 1;
+
+    // Full detail on the first occurrence, then a periodic one-line reminder. /health is
+    // the intended signal that the checker is stuck (DECISIONS.md #13); the log only needs
+    // to say why, once.
+    if (message !== lastTickErrorMessage) {
+      console.error('Scheduler tick failed:', err);
+      lastTickErrorMessage = message;
+    } else if (consecutiveTickFailures % 60 === 0) {
+      console.error(`Scheduler tick still failing (${consecutiveTickFailures} consecutive): ${message}`);
+    }
   }
 }
 
