@@ -1,4 +1,4 @@
-import rateLimit, { type Options } from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator, type Options } from 'express-rate-limit';
 import type { Request } from 'express';
 import { env } from '../../config/env.js';
 
@@ -43,7 +43,12 @@ export const apiKeyRateLimiter = rateLimit({
   ...shared,
   windowMs: 60 * 1000,
   limit: 600,
-  keyGenerator: (req: Request) => req.auth?.apiKeyId ?? req.ip ?? 'unknown',
+  // The IP fallback goes through ipKeyGenerator rather than using req.ip raw. A raw IPv6
+  // address is a single address out of the /64 a client is typically handed, so keying on
+  // it lets one caller rotate through addresses to get unlimited fresh buckets; the helper
+  // normalises to the subnet. Only reachable if skip() is ever loosened -- keeping it
+  // correct anyway, since the failure would be silent.
+  keyGenerator: (req: Request) => req.auth?.apiKeyId ?? ipKeyGenerator(req.ip ?? '') ?? 'unknown',
   // Only applies to key-authenticated requests; session traffic is covered above.
   skip: (req: Request) => env.nodeEnv === 'test' || req.auth?.method !== 'api_key',
 });

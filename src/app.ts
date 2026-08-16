@@ -1,6 +1,7 @@
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import { pool } from './db/pool.js';
+import { docsRouter } from './docs/docs.routes.js';
 import { alertsRouter } from './modules/alerts/alerts.routes.js';
 import { apiKeysRouter } from './modules/apikeys/apikeys.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
@@ -40,6 +41,9 @@ app.get('/health', async (_req, res) => {
   const checker = await getCheckerHealth();
   res.status(200).json({ status: checker.status, database: 'ok', checker });
 });
+
+// Unauthenticated: docs describing a public API are themselves public.
+app.use('/api/v1/docs', publicRateLimiter, docsRouter);
 
 app.use('/api/v1/auth', authRateLimiter, authRouter);
 app.use('/api/v1/status', publicRateLimiter, statusPagesRouter);
