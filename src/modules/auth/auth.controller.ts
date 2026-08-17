@@ -50,6 +50,11 @@ export async function refreshHandler(req: Request, res: Response) {
   }
 }
 
+export async function meHandler(req: Request, res: Response) {
+  const user = await authService.getUserById(req.auth!.userId!);
+  res.status(200).json({ success: true, data: { user } });
+}
+
 export async function logoutHandler(req: Request, res: Response) {
   const presentedToken: unknown = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
   if (typeof presentedToken === 'string') {

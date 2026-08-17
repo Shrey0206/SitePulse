@@ -8,8 +8,12 @@ export interface NotificationChannel {
   type: ChannelType;
   target: string;
   enabled: boolean;
-  /** Decrypted webhook signing secret; null for email channels. */
-  secret: string | null;
+  /**
+   * Ciphertext as stored, decrypted per-channel at delivery time rather than eagerly for
+   * the whole batch. Eager decryption meant one unusable secret threw for every channel,
+   * silently disabling all alerting for the organization -- see alerts.service.ts.
+   */
+  secretEncrypted: string | null;
 }
 
 export interface AlertContext {

@@ -55,20 +55,29 @@ export function addConnection(res: Response, orgId: string): () => void {
     write(res, `: heartbeat\n\n`);
   }, HEARTBEAT_MS);
 
-  const closeTimer = setTimeout(() => {
-    write(res, `event: reconnect\ndata: ${JSON.stringify({ reason: 'max_connection_age' })}\n\n`);
-    res.end();
-  }, MAX_CONNECTION_MS);
-
-  connections.set(id, { id, orgId, res, closeTimer, heartbeat });
-
-  return () => {
+  const teardown = () => {
     const connection = connections.get(id);
     if (!connection) return;
     clearInterval(connection.heartbeat);
     clearTimeout(connection.closeTimer);
     connections.delete(id);
   };
+
+  const closeTimer = setTimeout(() => {
+    write(res, `event: reconnect\ndata: ${JSON.stringify({ reason: 'max_connection_age' })}\n\n`);
+    res.end();
+    // Torn down here rather than waiting for the client's close event. That event normally
+    // follows res.end(), but a half-open socket may never deliver it -- and until it does,
+    // the heartbeat keeps firing every 25s against a dead response and the entry stays in
+    // the fan-out map.
+    teardown();
+  }, MAX_CONNECTION_MS);
+
+  connections.set(id, { id, orgId, res, closeTimer, heartbeat });
+
+  // Idempotent: whichever of client-disconnect or max-age fires first wins, and the second
+  // is a no-op because the entry is already gone.
+  return teardown;
 }
 
 /** Fan-out is org-scoped: a connection only ever receives its own tenant's events. */

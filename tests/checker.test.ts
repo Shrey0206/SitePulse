@@ -153,6 +153,22 @@ describe('due-monitor selection', () => {
 });
 
 describe('partition maintenance', () => {
+  // These deliberately use far-future dates so they can't collide with the partitions the
+  // suite's real check-writing tests depend on. Dropped afterwards so the test database
+  // doesn't accumulate them run after run -- TRUNCATE empties a partition but never
+  // removes it, so without this the schema would drift with test history.
+  afterAll(async () => {
+    // `~` not LIKE: LIKE supports only % and _, so a bracketed character class matches
+    // literally and silently selects nothing.
+    const created = await pool.query<{ tablename: string }>(
+      `SELECT tablename FROM pg_tables WHERE tablename ~ '^checks_202[78]_[0-9]{2}$'`,
+    );
+    for (const { tablename } of created.rows) {
+      if (!/^checks_\d{4}_\d{2}$/.test(tablename)) continue;
+      await pool.query(`DROP TABLE IF EXISTS ${tablename}`);
+    }
+  });
+
   it('creates the current month plus a two-month lookahead', async () => {
     await ensureChecksPartitions(new Date('2027-03-15T00:00:00Z'));
 

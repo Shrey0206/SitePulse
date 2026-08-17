@@ -67,13 +67,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const { organization } = await api.get<{ organization: Organization }>('/organizations/me');
+        // Both are fetched: the refresh cookie proves the session is valid but carries no
+        // identity, so restoring has to ask who the session belongs to rather than
+        // assuming. An earlier version invented a placeholder user here, which left the
+        // app holding an empty id and email for the rest of the page's life.
+        const [{ user }, { organization }] = await Promise.all([
+          api.get<{ user: User }>('/auth/me'),
+          api.get<{ organization: Organization }>('/organizations/me'),
+        ]);
         if (cancelled) return;
-        dispatch({
-          type: 'restored',
-          user: { id: '', email: '', organizationId: organization.id },
-          organization,
-        });
+        dispatch({ type: 'restored', user, organization });
       } catch {
         if (!cancelled) dispatch({ type: 'signed_out' });
       }

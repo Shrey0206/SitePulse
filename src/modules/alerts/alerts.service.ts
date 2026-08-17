@@ -21,13 +21,18 @@ export async function getEnabledChannels(organizationId: string): Promise<Notifi
     [organizationId],
   );
 
+  // Deliberately does not decrypt here. Decryption can fail -- a rotated
+  // WEBHOOK_SECRET_KEY invalidates every stored secret at once, and a truncated row does
+  // the same for one -- and doing it inside this map made a single bad row throw for the
+  // whole batch. Since dispatchAlerts swallows its own errors by design, that silently
+  // stopped every alert for the organization, email included.
   return result.rows.map((row) => ({
     id: row.id,
     organizationId: row.organization_id,
     type: row.type,
     target: row.target,
     enabled: row.enabled,
-    secret: row.secret_encrypted ? decryptSecret(row.secret_encrypted) : null,
+    secretEncrypted: row.secret_encrypted,
   }));
 }
 
@@ -56,11 +61,43 @@ async function logDelivery(
   );
 }
 
+/**
+ * Resolves one channel's outcome, containing every failure mode to that channel alone.
+ *
+ * Anything thrown here becomes a logged `failed` delivery rather than propagating, so a
+ * single broken channel can neither abort the batch nor vanish from the delivery log --
+ * "did the alert send, and if not why" has to stay answerable precisely when something is
+ * wrong (DECISIONS.md #33).
+ */
+async function attemptDelivery(
+  channel: NotificationChannel,
+  context: AlertContext,
+): Promise<DeliveryOutcome> {
+  try {
+    if (channel.type === 'email') {
+      return await sendAlertEmail(channel.target, context);
+    }
+
+    if (!channel.secretEncrypted) {
+      return { status: 'failed', responseCode: null, latencyMs: 0, error: 'Webhook has no signing secret' };
+    }
+
+    // Decrypted per-channel: a key rotation or a corrupted row fails this webhook only,
+    // leaving every other channel to deliver normally.
+    const secret = decryptSecret(channel.secretEncrypted);
+    return await sendAlertWebhook({ ...channel, secret }, context);
+  } catch (err) {
+    return {
+      status: 'failed',
+      responseCode: null,
+      latencyMs: 0,
+      error: err instanceof Error ? err.message : 'Unknown delivery error',
+    };
+  }
+}
+
 async function deliverTo(channel: NotificationChannel, context: AlertContext): Promise<void> {
-  const outcome =
-    channel.type === 'email'
-      ? await sendAlertEmail(channel.target, context)
-      : await sendAlertWebhook(channel, context);
+  const outcome = await attemptDelivery(channel, context);
 
   try {
     await logDelivery(channel, context, outcome);

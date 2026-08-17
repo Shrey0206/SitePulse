@@ -231,6 +231,16 @@ export const openApiDocument = {
         responses: { 200: jsonResponse('Logged out', success({ type: 'null' })) },
       },
     },
+    '/auth/me': {
+      get: {
+        tags: ['Auth'],
+        summary: 'Fetch the authenticated user',
+        description:
+          'Identifies the session holder. Needed because the access token is memory-only: after a page reload the client holds a valid refresh cookie but no identity. Session tokens only -- an API key belongs to an organization, not a person.',
+        security: [{ bearerAuth: [] }],
+        responses: { 200: jsonResponse('The user', success({ type: 'object' })), ...commonErrors },
+      },
+    },
     '/organizations/me': {
       get: {
         tags: ['Auth'],

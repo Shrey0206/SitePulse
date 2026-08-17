@@ -121,6 +121,27 @@ export async function signup(
   }
 }
 
+/**
+ * Resolves the authenticated user from their access token's subject.
+ *
+ * Needed because the access token is memory-only (DECISIONS.md #18): after a hard refresh
+ * the client has a valid refresh cookie but knows nothing about who it belongs to. Without
+ * this the frontend had to invent a placeholder user on restore, so the session state
+ * disagreed with reality for the rest of the page's life.
+ */
+export async function getUserById(userId: string): Promise<AuthUser> {
+  const result = await pool.query<{ id: string; email: string; organization_id: string }>(
+    `SELECT id, email, organization_id FROM users WHERE id = $1`,
+    [userId],
+  );
+  const row = result.rows[0];
+  // Reachable if the user was deleted while holding a live token; treat as unauthenticated
+  // rather than 404, since the credential itself is no longer valid.
+  if (!row) throw new AppError(401, 'UNAUTHENTICATED', 'User no longer exists');
+
+  return { id: row.id, email: row.email, organizationId: row.organization_id };
+}
+
 export async function login(input: LoginInput): Promise<{ user: AuthUser } & TokenPair> {
   const result = await pool.query<{ id: string; email: string; organization_id: string; password_hash: string }>(
     `SELECT id, email, organization_id, password_hash FROM users WHERE email = $1`,

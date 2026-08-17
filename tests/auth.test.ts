@@ -145,4 +145,28 @@ describe('auth', () => {
     const refreshAfterLogout = await request(app).post('/api/v1/auth/refresh').set('Cookie', `refreshToken=${cookie}`);
     expect(refreshAfterLogout.status).toBe(401);
   });
+
+  // The access token is memory-only, so after a page reload the client holds a valid
+  // refresh cookie but no idea whose session it is. Without this endpoint the frontend
+  // had to invent a placeholder user, leaving the app with an empty id and email.
+  it('returns the authenticated user from /auth/me', async () => {
+    const signupRes = await request(app)
+      .post('/api/v1/auth/signup')
+      .send({ email: 'me@example.com', password: 'password123', organizationName: 'Me Org' });
+    const token = signupRes.body.data.accessToken as string;
+
+    const res = await request(app).get('/api/v1/auth/me').set('Authorization', `Bearer ${token}`).expect(200);
+
+    expect(res.body.data.user).toMatchObject({
+      id: signupRes.body.data.user.id,
+      email: 'me@example.com',
+      organizationId: signupRes.body.data.user.organizationId,
+    });
+    // Never leak the password hash through a user-facing endpoint.
+    expect(JSON.stringify(res.body)).not.toContain('password');
+  });
+
+  it('rejects /auth/me without a session token', async () => {
+    await request(app).get('/api/v1/auth/me').expect(401);
+  });
 });

@@ -30,14 +30,11 @@ export function signPayload(secret: string, timestamp: string, body: string): st
   return createHmac('sha256', secret).update(`${timestamp}.${body}`).digest('hex');
 }
 
+/** Takes the already-decrypted secret; the caller owns decryption so it can isolate its failures. */
 export async function sendAlertWebhook(
-  channel: NotificationChannel,
+  channel: NotificationChannel & { secret: string },
   context: AlertContext,
 ): Promise<DeliveryOutcome> {
-  if (!channel.secret) {
-    return { status: 'failed', responseCode: null, latencyMs: 0, error: 'Webhook channel has no signing secret' };
-  }
-
   const body = JSON.stringify(buildPayload(context));
   const timestamp = Math.floor(context.occurredAt.getTime() / 1000).toString();
   const signature = signPayload(channel.secret, timestamp, body);
