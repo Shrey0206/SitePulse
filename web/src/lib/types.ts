@@ -24,9 +24,12 @@ export interface Incident {
   resolvedAt: string | null;
 }
 
+export type ChannelType = 'email' | 'webhook' | 'discord' | 'slack';
+
 export interface NotificationChannel {
   id: string;
-  type: 'email' | 'webhook';
+  type: ChannelType;
+  /** Address or URL; for discord/slack a masked label, since the real URL is a credential. */
   target: string;
   enabled: boolean;
   createdAt: string;
@@ -35,7 +38,7 @@ export interface NotificationChannel {
 export interface AlertDelivery {
   id: string;
   incidentId: string;
-  channel: 'email' | 'webhook';
+  channel: ChannelType;
   event: 'incident_opened' | 'incident_resolved';
   status: 'sent' | 'failed';
   target: string;

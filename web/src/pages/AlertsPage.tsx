@@ -4,14 +4,41 @@ import { EmptyState, ErrorState, LoadingRows } from '../components/States';
 import { Toast, useToast } from '../components/Toast';
 import { api } from '../lib/api';
 import { absoluteTime } from '../lib/format';
-import type { AlertDelivery, NotificationChannel } from '../lib/types';
+import type { AlertDelivery, ChannelType, NotificationChannel } from '../lib/types';
 import { useAsync } from '../lib/useAsync';
+
+const CHANNEL_LABEL: Record<ChannelType, string> = {
+  email: 'Email',
+  webhook: 'Webhook',
+  discord: 'Discord',
+  slack: 'Slack',
+};
+
+/** What the target field asks for, per channel type. */
+const TARGET_FIELD: Record<ChannelType, { label: string; placeholder: string; hint: string | null }> = {
+  email: { label: 'Email address', placeholder: 'oncall@example.com', hint: null },
+  webhook: {
+    label: 'Endpoint URL',
+    placeholder: 'https://example.com/hooks/sitepulse',
+    hint: 'Requests are signed with HMAC-SHA256. You will get a signing secret once, on creation.',
+  },
+  discord: {
+    label: 'Discord webhook URL',
+    placeholder: 'https://discord.com/api/webhooks/…',
+    hint: 'In Discord: Server Settings → Integrations → Webhooks → New Webhook → Copy Webhook URL. The URL is a secret: it is stored encrypted and never shown again.',
+  },
+  slack: {
+    label: 'Slack webhook URL',
+    placeholder: 'https://hooks.slack.com/services/…',
+    hint: 'Create an Incoming Webhook for your workspace in Slack’s app settings and paste its URL. The URL is a secret: it is stored encrypted and never shown again.',
+  },
+};
 
 export function AlertsPage() {
   const toast = useToast();
 
   const [adding, setAdding] = useState(false);
-  const [type, setType] = useState<'email' | 'webhook'>('email');
+  const [type, setType] = useState<ChannelType>('email');
   const [target, setTarget] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -100,7 +127,7 @@ export function AlertsPage() {
         {!channels.loading && !channels.error && channelList.length === 0 && (
           <EmptyState
             title="No channels configured"
-            message="Add an email address or webhook endpoint to be notified when a monitor goes down."
+            message="Add a Discord or Slack channel, a webhook endpoint, or an email address to be notified when a monitor goes down."
             action={
               <button type="button" className="btn btn--primary" onClick={() => setAdding(true)}>
                 Add a channel
@@ -125,7 +152,7 @@ export function AlertsPage() {
               {channelList.map((channel) => (
                 <tr key={channel.id}>
                   <td className="mono">{channel.target}</td>
-                  <td className="muted">{channel.type === 'email' ? 'Email' : 'Webhook'}</td>
+                  <td className="muted">{CHANNEL_LABEL[channel.type]}</td>
                   <td>
                     <span className={`status-badge status-badge--${channel.enabled ? 'up' : 'unknown'}`}>
                       <span className="status-badge__dot" aria-hidden="true" />
@@ -237,28 +264,33 @@ export function AlertsPage() {
             <select
               id="channelType"
               value={type}
-              onChange={(e) => setType(e.target.value as 'email' | 'webhook')}
+              onChange={(e) => {
+                setType(e.target.value as ChannelType);
+                // A pasted address or URL is meaningless for a different channel type.
+                setTarget('');
+                setFormError(null);
+              }}
             >
-              <option value="email">Email</option>
-              <option value="webhook">Webhook</option>
+              {(Object.keys(CHANNEL_LABEL) as ChannelType[]).map((value) => (
+                <option key={value} value={value}>
+                  {CHANNEL_LABEL[value]}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="field">
-            <label htmlFor="channelTarget">{type === 'email' ? 'Email address' : 'Endpoint URL'}</label>
+            <label htmlFor="channelTarget">{TARGET_FIELD[type].label}</label>
             <input
               id="channelTarget"
               type={type === 'email' ? 'email' : 'url'}
               required
+              autoComplete="off"
               value={target}
               onChange={(e) => setTarget(e.target.value)}
-              placeholder={type === 'email' ? 'oncall@example.com' : 'https://example.com/hooks/sitepulse'}
+              placeholder={TARGET_FIELD[type].placeholder}
             />
-            {type === 'webhook' && (
-              <span className="field__hint">
-                Requests are signed with HMAC-SHA256. You will get a signing secret once, on creation.
-              </span>
-            )}
+            {TARGET_FIELD[type].hint && <span className="field__hint">{TARGET_FIELD[type].hint}</span>}
           </div>
 
           {formError && (

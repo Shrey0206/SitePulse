@@ -1,11 +1,12 @@
 import { pool } from '../../db/pool.js';
 import { AppError } from '../../shared/errors/AppError.js';
 import type { CreateChannelInput, ListDeliveriesQuery, UpdateChannelInput } from './alerts.schemas.js';
+import type { ChannelType } from './alerts.types.js';
 
 interface ChannelRow {
   id: string;
   organization_id: string;
-  type: 'email' | 'webhook';
+  type: ChannelType;
   target: string;
   enabled: boolean;
   created_at: Date;
@@ -14,7 +15,7 @@ interface ChannelRow {
 export interface ChannelView {
   id: string;
   organizationId: string;
-  type: 'email' | 'webhook';
+  type: ChannelType;
   target: string;
   enabled: boolean;
   createdAt: Date;
@@ -84,7 +85,7 @@ export async function deleteChannel(organizationId: string, channelId: string): 
 interface DeliveryRow {
   id: string;
   incident_id: string;
-  channel: 'email' | 'webhook';
+  channel: ChannelType;
   event: string;
   status: 'sent' | 'failed';
   target: string;

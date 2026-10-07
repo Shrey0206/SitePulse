@@ -399,14 +399,16 @@ export const openApiDocument = {
       get: {
         tags: ['Alerts'],
         summary: 'List notification channels',
-        description: 'Webhook signing secrets are never returned here.',
+        description:
+          'Webhook signing secrets and Discord/Slack webhook URLs are never returned here; a Discord or Slack channel is listed under a masked `target` label.',
         responses: { 200: jsonResponse('Channels', success({ type: 'object' })), ...commonErrors },
       },
       post: {
         tags: ['Alerts'],
         summary: 'Add a notification channel',
         description:
-          'For type=webhook the response includes a one-time signing secret. It is stored encrypted and cannot be retrieved again.',
+          'For type=webhook the response includes a one-time signing secret. It is stored encrypted and cannot be retrieved again. ' +
+          'For type=discord or type=slack, `target` is the incoming-webhook URL you copied from that service. It is a credential, so it is stored encrypted and the channel is thereafter shown by a masked label; it is not echoed back. Only real discord.com / hooks.slack.com webhook URLs are accepted, and alerts are sent in each service\'s native message format.',
         requestBody: {
           required: true,
           content: {
@@ -415,8 +417,12 @@ export const openApiDocument = {
                 type: 'object',
                 required: ['type', 'target'],
                 properties: {
-                  type: { type: 'string', enum: ['email', 'webhook'] },
-                  target: { type: 'string', description: 'Email address, or webhook URL.' },
+                  type: { type: 'string', enum: ['email', 'webhook', 'discord', 'slack'] },
+                  target: {
+                    type: 'string',
+                    description:
+                      'Email address, webhook URL, or (for discord/slack) that service\'s incoming-webhook URL.',
+                  },
                   enabled: { type: 'boolean', default: true },
                 },
               },
@@ -450,7 +456,7 @@ export const openApiDocument = {
         tags: ['Alerts'],
         summary: 'Alert delivery log',
         description:
-          'Every attempted notification on both channels, successful or not, with the failure reason where applicable.',
+          'Every attempted notification on every channel type, successful or not, with the failure reason where applicable.',
         parameters: [
           { name: 'incidentId', in: 'query', schema: { type: 'string', format: 'uuid' } },
           { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 200, default: 50 } },

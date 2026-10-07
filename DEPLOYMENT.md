@@ -41,10 +41,11 @@ Store these in a password manager. **Don't reuse anything from `.env` or `.env.t
       `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 - [x] ~~An SMTP provider~~ **Not applicable: email is off on Railway.** Railway disables
       outbound SMTP on the Free, Trial and Hobby plans (it is "only available on the Pro plan
-      and above"), so email alerts cannot work there whichever provider you pick. Webhook
-      alerts are the production alert channel. Email still works locally via Mailpit. To
-      enable it later, either move to Railway Pro or add an HTTPS email API such as Resend
-      (a code change; DECISIONS.md #21 chose SMTP).
+      and above"), so email alerts cannot work there whichever provider you pick. **Discord and
+      Slack channels (DECISIONS.md #38) and signed webhooks are the production alert
+      channels**: they are plain HTTPS, so they work on every plan. Email still works locally
+      via Mailpit. To enable it on Railway later, either move to Pro or add an HTTPS email
+      API such as Resend (a code change; DECISIONS.md #21 chose SMTP).
 
 ## 2. Create the Railway project
 
@@ -109,6 +110,12 @@ Expected sequence in the deployment logs:
       email channel's deliveries will show `failed` in production; that is expected.
 - [ ] **Webhook alert:** add a webhook channel pointing at a webhook.site URL. A signed
       request arrives. This proves `WEBHOOK_SECRET_KEY` works.
+- [ ] **Discord alert:** in a Discord server you own, Server Settings → Integrations →
+      Webhooks → New Webhook → Copy Webhook URL. On the Alerts page add a **Discord**
+      channel with that URL. The channel appears under a masked label
+      (`discord.com/api/webhooks/<id>/••••••••`), never the URL. When an incident opens, a
+      red embed ("🔴 … is DOWN") posts to the channel, and a green one when it resolves. The
+      delivery log shows `Sent`. (Slack works the same way with an Incoming Webhook.)
 - [ ] Fix the monitor. The incident **resolves** and a recovery alert fires.
 - [ ] **Live updates:** keep the dashboard open while a status changes. It updates without a
       reload. This confirms Railway's proxy isn't buffering the SSE stream.

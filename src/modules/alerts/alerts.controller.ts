@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { requireParam } from '../../shared/utils/params.js';
 import * as channelsService from './alerts.channels.service.js';
+import { maskChatWebhookUrl } from './alerts.chat.js';
 import { encryptSecret, generateWebhookSecret } from './alerts.crypto.js';
 import {
   createChannelSchema,
@@ -11,8 +12,21 @@ import {
 export async function createChannelHandler(req: Request, res: Response) {
   const input = createChannelSchema.parse(req.body);
 
-  if (input.type !== 'webhook') {
+  if (input.type === 'email') {
     const channel = await channelsService.createChannel(req.auth!.orgId, input);
+    res.status(201).json({ success: true, data: { channel } });
+    return;
+  }
+
+  if (input.type === 'discord' || input.type === 'slack') {
+    // The pasted URL is a credential: encrypt it, and store/return only a masked label.
+    // Nothing is echoed back -- unlike a webhook there is no secret to reveal, and the URL
+    // the caller just supplied must not travel through any response or log.
+    const channel = await channelsService.createChannel(
+      req.auth!.orgId,
+      { ...input, target: maskChatWebhookUrl(input.type, input.target) },
+      encryptSecret(input.target),
+    );
     res.status(201).json({ success: true, data: { channel } });
     return;
   }

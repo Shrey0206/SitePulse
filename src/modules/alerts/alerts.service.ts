@@ -1,13 +1,14 @@
 import { pool } from '../../db/pool.js';
+import { CHAT_SERVICE_LABEL, isChatChannelType, sendAlertChat } from './alerts.chat.js';
 import { decryptSecret } from './alerts.crypto.js';
 import { sendAlertEmail } from './alerts.email.js';
-import type { AlertContext, DeliveryOutcome, NotificationChannel } from './alerts.types.js';
+import type { AlertContext, ChannelType, DeliveryOutcome, NotificationChannel } from './alerts.types.js';
 import { sendAlertWebhook } from './alerts.webhook.js';
 
 interface ChannelRow {
   id: string;
   organization_id: string;
-  type: 'email' | 'webhook';
+  type: ChannelType;
   target: string;
   secret_encrypted: string | null;
   enabled: boolean;
@@ -79,12 +80,24 @@ async function attemptDelivery(
     }
 
     if (!channel.secretEncrypted) {
-      return { status: 'failed', responseCode: null, latencyMs: 0, error: 'Webhook has no signing secret' };
+      return {
+        status: 'failed',
+        responseCode: null,
+        latencyMs: 0,
+        error: isChatChannelType(channel.type)
+          ? `${CHAT_SERVICE_LABEL[channel.type]} channel has no stored webhook URL`
+          : 'Webhook has no signing secret',
+      };
     }
 
-    // Decrypted per-channel: a key rotation or a corrupted row fails this webhook only,
+    // Decrypted per-channel: a key rotation or a corrupted row fails this channel only,
     // leaving every other channel to deliver normally.
     const secret = decryptSecret(channel.secretEncrypted);
+
+    if (isChatChannelType(channel.type)) {
+      // For chat channels the decrypted value is the webhook URL itself, not a signing key.
+      return await sendAlertChat(channel.type, secret, context);
+    }
     return await sendAlertWebhook({ ...channel, secret }, context);
   } catch (err) {
     return {
