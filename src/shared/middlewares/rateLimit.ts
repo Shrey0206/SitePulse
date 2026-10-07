@@ -20,7 +20,10 @@ const shared: Partial<Options> = {
   },
 };
 
-/** Tight limit on unauthenticated auth endpoints -- these are the credential-guessing surface. */
+/**
+ * Tight limit on the credential endpoints only (signup, login) -- the password-guessing
+ * surface. Not for refresh/logout/me: those run on every page load and use sessionRateLimiter.
+ */
 export const authRateLimiter = rateLimit({
   ...shared,
   windowMs: 15 * 60 * 1000,

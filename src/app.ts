@@ -12,7 +12,7 @@ import { organizationsRouter } from './modules/organizations/organizations.route
 import { sseRouter } from './modules/sse/sse.routes.js';
 import { statusPagesRouter } from './modules/statuspages/statuspages.routes.js';
 import { errorHandler, notFoundHandler } from './shared/middlewares/errorHandler.js';
-import { authRateLimiter, publicRateLimiter, sessionRateLimiter } from './shared/middlewares/rateLimit.js';
+import { publicRateLimiter, sessionRateLimiter } from './shared/middlewares/rateLimit.js';
 import { serveFrontend } from './shared/middlewares/serveFrontend.js';
 
 export const app = express();
@@ -46,7 +46,9 @@ app.get('/health', async (_req, res) => {
 // Unauthenticated: docs describing a public API are themselves public.
 app.use('/api/v1/docs', publicRateLimiter, docsRouter);
 
-app.use('/api/v1/auth', authRateLimiter, authRouter);
+// Rate limiting is applied per route inside authRouter: credential endpoints are limited far
+// more tightly than refresh/logout/me, which run on every page load.
+app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/status', publicRateLimiter, statusPagesRouter);
 
 // sessionRateLimiter is the IP-keyed outer limit. Routers that accept API keys apply
