@@ -25,7 +25,8 @@ vulnerabilities, and the exact Railway build command run under `NODE_ENV=product
   ```
 - [ ] Production build works from clean (this is the exact Railway build command):
   ```bash
-  NODE_ENV=production bash -c "npm ci --include=dev && npm --prefix web ci --include=dev && npm run build:all"
+  # Railway installs the root dependencies itself first; the build command then does the rest.
+  npm ci && NODE_ENV=production bash -c "npm --prefix web ci --include=dev && npm run build:all"
   ls dist/index.js web/dist/index.html
   ```
 
@@ -79,14 +80,15 @@ Expected sequence in the deployment logs:
 3. `SitePulse listening on port <N>`
 4. Healthcheck passes and the deployment goes Active.
 
-| Symptom                                            | Likely cause                                                                                         |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `tsc: not found` / `sh: tsc`                       | devDependencies were skipped. Check that `buildCommand` in `railway.json` still has `--include=dev`. |
-| `Missing required environment variable: …`         | Variable not set on the **app** service (section 3).                                                 |
-| Pre-deploy fails with `ECONNREFUSED` / `ENOTFOUND` | `DATABASE_URL` reference is wrong or points at the wrong service.                                    |
-| Pre-deploy fails with a SQL error                  | A migration failed. Nothing is deployed. Read the error and fix the migration.                       |
-| Healthcheck never passes                           | `/health` returns 503 when Postgres is unreachable. Check `DATABASE_URL`.                            |
-| App serves JSON but `/` is a 404                   | `web/dist` wasn't built. Check the build log for the `vite build` step.                              |
+| Symptom                                            | Likely cause                                                                                           |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `tsc: not found` / `sh: tsc`                       | devDependencies were skipped by the root install. Set `NPM_CONFIG_PRODUCTION=false` on the service.    |
+| `EBUSY: rmdir '/app/node_modules/.cache'`          | The build command re-runs a root `npm ci`. Don't: Nixpacks already installed and mounts a cache there. |
+| `Missing required environment variable: …`         | Variable not set on the **app** service (section 3).                                                   |
+| Pre-deploy fails with `ECONNREFUSED` / `ENOTFOUND` | `DATABASE_URL` reference is wrong or points at the wrong service.                                      |
+| Pre-deploy fails with a SQL error                  | A migration failed. Nothing is deployed. Read the error and fix the migration.                         |
+| Healthcheck never passes                           | `/health` returns 503 when Postgres is unreachable. Check `DATABASE_URL`.                              |
+| App serves JSON but `/` is a 404                   | `web/dist` wasn't built. Check the build log for the `vite build` step.                                |
 
 ## 5. Smoke test (replace `$URL`)
 
