@@ -31,7 +31,7 @@
     "express-rate-limit": "^8.6.2",
     "jsonwebtoken": "^9.0.3",
     "node-pg-migrate": "^9.0.0",
-    "nodemailer": "^9.0.5",
+    "nodemailer": "^10.0.15",
     "pg": "^8.23.0",
     "swagger-ui-express": "^5.0.1",
     "zod": "^4.4.3"
