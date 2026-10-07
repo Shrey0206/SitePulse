@@ -16,14 +16,16 @@ const FRONTEND_DIR = path.resolve(here, '../../../web/dist');
  *
  * No-op when the build is absent -- running the API without building the frontend (tests,
  * a backend-only dev loop) should not crash on a missing directory.
+ *
+ * `frontendDir` is a parameter only so tests can point it at a fixture directory.
  */
-export function serveFrontend(app: Express): void {
-  if (!existsSync(FRONTEND_DIR)) return;
+export function serveFrontend(app: Express, frontendDir: string = FRONTEND_DIR): void {
+  if (!existsSync(frontendDir)) return;
 
   // Hashed asset filenames are safe to cache hard; index.html must not be, or a deploy
   // leaves clients loading an old shell that references assets which no longer exist.
   app.use(
-    express.static(FRONTEND_DIR, {
+    express.static(frontendDir, {
       index: false,
       setHeaders: (res, filePath) => {
         if (filePath.endsWith('index.html')) {
@@ -39,7 +41,16 @@ export function serveFrontend(app: Express): void {
   // file on disk. Mounted after every API router, so an unmatched /api/v1 path still gets
   // a JSON 404 rather than the HTML shell -- an API client receiving HTML for a typo is a
   // genuinely confusing failure.
-  app.get(/^(?!\/api\/).*/, (_req, res) => {
-    res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
+  //
+  // The same reasoning applies to file requests: a path with an extension that express.static
+  // didn't find (an old /assets/index-<hash>.js after a deploy replaced the bundle) is a real
+  // 404, not a client route. Answering it with the HTML shell and a 200 makes the browser
+  // try to execute HTML as a script and fail with an unrelated syntax error.
+  app.get(/^(?!\/api\/).*/, (req, res, next) => {
+    if (path.extname(req.path)) {
+      next();
+      return;
+    }
+    res.sendFile(path.join(frontendDir, 'index.html'));
   });
 }

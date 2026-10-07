@@ -17,6 +17,9 @@ export const env = {
 
   smtpHost: process.env.SMTP_HOST ?? 'localhost',
   smtpPort: Number(process.env.SMTP_PORT ?? 1025),
+  // true = implicit TLS (port 465). false = plain connection upgraded via STARTTLS when the
+  // server offers it (587, and mailpit's 1025 in dev).
+  smtpSecure: process.env.SMTP_SECURE === 'true',
   smtpUser: process.env.SMTP_USER,
   smtpPassword: process.env.SMTP_PASSWORD,
   smtpFrom: process.env.SMTP_FROM ?? 'alerts@sitepulse.local',

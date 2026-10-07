@@ -7,7 +7,7 @@ import type { AlertContext, DeliveryOutcome } from './alerts.types.js';
 const transporter = nodemailer.createTransport({
   host: env.smtpHost,
   port: env.smtpPort,
-  secure: false,
+  secure: env.smtpSecure,
   auth: env.smtpUser && env.smtpPassword ? { user: env.smtpUser, pass: env.smtpPassword } : undefined,
 });
 

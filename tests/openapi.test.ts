@@ -114,7 +114,7 @@ describe('OpenAPI document', () => {
         const operation = (
           openApiDocument.paths[path as keyof typeof openApiDocument.paths] as Record<
             string,
-            { summary?: string; tags?: string[] }
+            { summary?: string; tags?: readonly string[] }
           >
         )[method];
         return !operation?.summary || !operation.tags?.length;
