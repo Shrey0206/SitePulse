@@ -39,8 +39,12 @@ Store these in a password manager. **Don't reuse anything from `.env` or `.env.t
       `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
 - [ ] `WEBHOOK_SECRET_KEY`: exactly 32 bytes / 64 hex characters
       `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
-- [ ] An SMTP provider and its credentials (host, port, user, password, a verified
-      sender address). Without one, email alerts silently fail (see section 3).
+- [x] ~~An SMTP provider~~ **Not applicable: email is off on Railway.** Railway disables
+      outbound SMTP on the Free, Trial and Hobby plans (it is "only available on the Pro plan
+      and above"), so email alerts cannot work there whichever provider you pick. Webhook
+      alerts are the production alert channel. Email still works locally via Mailpit. To
+      enable it later, either move to Railway Pro or add an HTTPS email API such as Resend
+      (a code change; DECISIONS.md #21 chose SMTP).
 
 ## 2. Create the Railway project
 
@@ -58,18 +62,15 @@ Store these in a password manager. **Don't reuse anything from `.env` or `.env.t
 The app throws at boot if `DATABASE_URL` or `JWT_SECRET` is missing, so deploying first just
 produces a crash loop.
 
-| Variable                      | Value                           | Required      | Notes                                                                              |
-| ----------------------------- | ------------------------------- | ------------- | ---------------------------------------------------------------------------------- |
-| `DATABASE_URL`                | `${{Postgres.DATABASE_URL}}`    | **yes**       | Reference variable. Change `Postgres` if you renamed the DB service.               |
-| `JWT_SECRET`                  | from section 1                  | **yes**       |                                                                                    |
-| `NODE_ENV`                    | `production`                    | **yes**       | Marks the refresh cookie `Secure`. Without it the cookie is sent over plain HTTP.  |
-| `WEBHOOK_SECRET_KEY`          | from section 1                  | for webhooks  | The app boots without it, but creating a webhook channel fails.                    |
-| `SMTP_HOST` / `SMTP_PORT`     | your relay                      | for email     | **Defaults are `localhost:1025`.** Email alerts silently fail on Railway if unset. |
-| `SMTP_USER` / `SMTP_PASSWORD` | your relay                      | for email     |                                                                                    |
-| `SMTP_FROM`                   | verified sender                 | for email     | Many providers reject unverified senders.                                          |
-| `SMTP_SECURE`                 | `false` for 587, `true` for 465 | optional      | Default `false`.                                                                   |
-| `BCRYPT_ROUNDS`               |                                 | optional      | Default 12.                                                                        |
-| `PORT`                        |                                 | **don't set** | Railway injects it.                                                                |
+| Variable             | Value                        | Required        | Notes                                                                                                                          |
+| -------------------- | ---------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`       | `${{Postgres.DATABASE_URL}}` | **yes**         | Reference variable. Change `Postgres` if you renamed the DB service.                                                           |
+| `JWT_SECRET`         | from section 1               | **yes**         |                                                                                                                                |
+| `NODE_ENV`           | `production`                 | **yes**         | Marks the refresh cookie `Secure`. Without it the cookie is sent over plain HTTP.                                              |
+| `WEBHOOK_SECRET_KEY` | from section 1               | for webhooks    | The app boots without it, but creating a webhook channel fails.                                                                |
+| `SMTP_*`             |                              | **leave unset** | SMTP is blocked on Railway Free/Trial/Hobby (see section 1). Email alerts will not send; use webhooks. Only meaningful on Pro. |
+| `BCRYPT_ROUNDS`      |                              | optional        | Default 12.                                                                                                                    |
+| `PORT`               |                              | **don't set**   | Railway injects it.                                                                                                            |
 
 ## 4. Deploy and watch the logs
 
@@ -104,9 +105,8 @@ Expected sequence in the deployment logs:
       (10 s minimum).
 - [ ] Force a failure (point a monitor at a URL that returns 500, or set an expected status
       the site never returns). After the failure threshold, an **incident opens**.
-- [ ] **Email alert:** add an email channel with your address, trigger an incident. The
-      delivery shows `sent` on the Alerts page and the email arrives (check spam). This is
-      the first test against a real SMTP relay.
+- [x] **Email alert: skipped on Railway** (SMTP is blocked on this plan, see section 1). An
+      email channel's deliveries will show `failed` in production; that is expected.
 - [ ] **Webhook alert:** add a webhook channel pointing at a webhook.site URL. A signed
       request arrives. This proves `WEBHOOK_SECRET_KEY` works.
 - [ ] Fix the monitor. The incident **resolves** and a recovery alert fires.
