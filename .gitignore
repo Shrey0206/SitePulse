@@ -11,3 +11,6 @@ web/node_modules/
 web/dist/
 tsconfig.tsbuildinfo
 web/*.tsbuildinfo
+
+# Personal interview-prep notes; kept local, never pushed.
+Docs/
