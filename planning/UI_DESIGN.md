@@ -5,7 +5,7 @@ This is the authoritative visual and interaction spec for the SitePulse frontend
 ## 1. Design Direction
 
 - **Dark-first authenticated dashboard** (monitors, incidents, alerts, settings)
-- **Light public status page and auth pages** (signup/login, public status page)
+- **Dark auth pages and public status page too** (signup/login, public status page): one theme across the product. This replaces the original light-theme choice (2026-10-08): a second theme meant a second set of colour variables, and text that inherited its colour from <body> rendered near-white on the light surfaces. Contrast is held to WCAG AA: --text-faint is #7d8590, and filled buttons use --accent-solid
 - Compact left sidebar + contextual top bar in the authenticated app
 - Dense but readable: status lists, incident timelines, response-time charts
 - Restrained accent color for interactive elements; semantic colors for status (up = green/success, down = red/error, degraded = amber/warning) — never color alone to communicate status (pair with text/icon)

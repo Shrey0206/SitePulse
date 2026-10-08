@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Brand } from '../components/Brand';
 import { useAuth } from '../state/hooks';
 
 export function LoginPage() {
@@ -26,8 +27,8 @@ export function LoginPage() {
   }
 
   return (
-    // Light theme for auth pages (UI_DESIGN.md §1).
-    <div className="auth-page" data-theme="light">
+    <div className="auth-page">
+      <Brand />
       <div className="auth-card">
         <h1>Sign in</h1>
         <p className="auth-card__sub">Monitor your endpoints and get alerted when they fail.</p>
@@ -63,7 +64,7 @@ export function LoginPage() {
             </p>
           )}
 
-          <button type="submit" className="btn btn--primary" disabled={submitting} style={{ width: '100%' }}>
+          <button type="submit" className="btn btn--primary btn--lg" disabled={submitting} style={{ width: '100%' }}>
             {submitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>

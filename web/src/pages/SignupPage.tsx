@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Brand } from '../components/Brand';
 import { useAuth } from '../state/hooks';
 
 export function SignupPage() {
@@ -27,7 +28,8 @@ export function SignupPage() {
   }
 
   return (
-    <div className="auth-page" data-theme="light">
+    <div className="auth-page">
+      <Brand />
       <div className="auth-card">
         <h1>Create an account</h1>
         <p className="auth-card__sub">Your organization gets its own public status page.</p>
@@ -85,7 +87,7 @@ export function SignupPage() {
             </p>
           )}
 
-          <button type="submit" className="btn btn--primary" disabled={submitting} style={{ width: '100%' }}>
+          <button type="submit" className="btn btn--primary btn--lg" disabled={submitting} style={{ width: '100%' }}>
             {submitting ? 'Creating account…' : 'Create account'}
           </button>
         </form>

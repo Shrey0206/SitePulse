@@ -1,7 +1,8 @@
 /*
- * Two themes on purpose (UI_DESIGN.md §1): the authenticated dashboard is dark, while
- * auth pages and the public status page are light. A status page is read by customers
- * during an outage and should look like a public notice, not an internal console.
+ * One dark theme everywhere (UI_DESIGN.md §1): the dashboard, the auth pages and the public
+ * status page share it, so the product reads as one thing. (An earlier light theme for the
+ * public pages was dropped: it needed a second set of variables, and any text that inherited
+ * its colour from <body> rendered near-white on a white card.)
  *
  * Surfaces are border-led rather than shadow-led, and semantic status colours are always
  * paired with text or an icon -- never colour alone (§5).
@@ -14,7 +15,9 @@
   --radius: 6px;
   --radius-sm: 4px;
 
-  /* Dark theme: the authenticated app. */
+  /* Native controls, scrollbars and autofill should render dark too. */
+  color-scheme: dark;
+
   --bg: #0d1117;
   --bg-raised: #161b22;
   --bg-inset: #010409;
@@ -23,11 +26,17 @@
   --border-strong: #484f58;
   --text: #e6edf3;
   --text-muted: #9198a1;
-  --text-faint: #6e7681;
+  /* #7d8590 clears WCAG AA (4.5:1) for small text on --bg and --bg-raised; the previous
+     #6e7681 was 4.1:1 on --bg and lower on raised surfaces. */
+  --text-faint: #7d8590;
 
   --accent: #4493f8;
   --accent-hover: #58a6ff;
   --accent-contrast: #ffffff;
+  /* Filled buttons: white on --accent is only 3.1:1, so solid fills use a deeper blue
+     (4.6:1). --accent stays for links and focus rings, where it sits on dark surfaces. */
+  --accent-solid: #1f6feb;
+  --accent-solid-hover: #1a5fd1;
 
   --success: #3fb950;
   --success-bg: #12261e;
@@ -39,31 +48,6 @@
   --neutral-bg: #1c2128;
 
   --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
-}
-
-/* Light theme: auth pages and the public status page. */
-[data-theme='light'] {
-  --bg: #ffffff;
-  --bg-raised: #f6f8fa;
-  --bg-inset: #f0f2f5;
-  --bg-hover: #eef1f4;
-  --border: #d1d9e0;
-  --border-strong: #b7c0c9;
-  --text: #1f2328;
-  --text-muted: #59636e;
-  --text-faint: #818b96;
-
-  --accent: #0969da;
-  --accent-hover: #0860c4;
-
-  --success: #1a7f37;
-  --success-bg: #dafbe1;
-  --danger: #cf222e;
-  --danger-bg: #ffebe9;
-  --warning: #9a6700;
-  --warning-bg: #fff8c5;
-  --neutral: #59636e;
-  --neutral-bg: #eef1f4;
 }
 
 *,
@@ -277,13 +261,13 @@ button {
 }
 
 .btn--primary {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--accent-solid);
+  border-color: var(--accent-solid);
   color: var(--accent-contrast);
 }
 .btn--primary:hover:not(:disabled) {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  background: var(--accent-solid-hover);
+  border-color: var(--accent-solid-hover);
 }
 
 .btn--danger {
@@ -298,6 +282,12 @@ button {
 .btn--sm {
   padding: 3px 8px;
   font-size: 12px;
+}
+
+.btn--lg {
+  justify-content: center;
+  padding: 9px 14px;
+  font-size: 14px;
 }
 
 .field {
@@ -329,6 +319,16 @@ button {
 .field select:focus-visible,
 .field textarea:focus-visible {
   border-color: var(--accent);
+}
+
+/* Chrome paints autofilled fields a bright blue that ignores the theme. Delaying the
+   background transition indefinitely keeps the field dark; the text colour is set directly. */
+.field input:-webkit-autofill,
+.field input:-webkit-autofill:hover,
+.field input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+  transition: background-color 600000s 0s;
 }
 
 .field__hint {
@@ -563,108 +563,345 @@ button {
   gap: 8px;
 }
 
-/* ---------- Auth pages (light) ---------- */
+/* ---------- Brand mark ---------- */
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.brand--md {
+  font-size: 20px;
+}
+
+.brand--sm {
+  gap: 7px;
+  font-size: 13px;
+}
+
+.brand__pulse {
+  position: relative;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.brand--sm .brand__pulse {
+  width: 8px;
+  height: 8px;
+}
+
+/* A single soft ring, slow enough to be background rather than a distraction. */
+.brand__pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--success);
+  animation: brand-pulse 2.6s ease-out infinite;
+}
+
+@keyframes brand-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand__pulse::after {
+    display: none;
+  }
+}
+
+/* ---------- Auth pages ---------- */
 
 .auth-page {
   min-height: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 22px;
   padding: 24px;
-  background: var(--bg-raised);
+  background: var(--bg);
 }
 
 .auth-card {
   width: 100%;
-  max-width: 380px;
-  background: var(--bg);
+  max-width: 400px;
+  background: var(--bg-raised);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 28px;
 }
 
 .auth-card h1 {
+  font-size: 22px;
   margin-bottom: 4px;
 }
 
 .auth-card__sub {
   color: var(--text-muted);
   font-size: 13px;
-  margin: 0 0 20px;
+  margin: 0 0 22px;
+}
+
+.auth-card .field {
+  margin-bottom: 16px;
+}
+
+.auth-card .field label {
+  font-size: 13px;
+}
+
+.auth-card .field input {
+  padding: 9px 12px;
+  font-size: 14px;
+}
+
+.auth-card .field__error {
+  margin: 0 0 14px;
 }
 
 .auth-card__footer {
-  margin-top: 16px;
+  margin: 20px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
   font-size: 13px;
   color: var(--text-muted);
   text-align: center;
 }
 
-/* ---------- Public status page (light) ---------- */
+/* ---------- Public status page ---------- */
 
 .status-page {
   min-height: 100%;
-  background: var(--bg-raised);
-  padding: 40px 20px;
+  background: var(--bg);
+  padding: 40px 20px 32px;
 }
 
 .status-page__inner {
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
 }
 
+.status-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-bottom: 18px;
+}
+
+.status-header h1 {
+  font-size: 24px;
+}
+
+.status-header__meta {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+/* The tone variables drive the border, icon and meter, so a status colour is only ever one
+   of several cues: the icon shape and the headline text carry the meaning too (§5). */
 .status-hero {
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  padding: 22px;
+  --tone: var(--neutral);
+  --tone-bg: var(--neutral-bg);
+  display: flex;
+  align-items: center;
+  gap: 16px;
   margin-bottom: 20px;
-  background: var(--bg);
+  padding: 20px 22px;
+  background: var(--tone-bg);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--tone);
+  border-radius: 10px;
 }
 
 .status-hero--operational {
-  border-left: 4px solid var(--success);
+  --tone: var(--success);
+  --tone-bg: var(--success-bg);
 }
 .status-hero--degraded {
-  border-left: 4px solid var(--warning);
+  --tone: var(--warning);
+  --tone-bg: var(--warning-bg);
 }
 .status-hero--major_outage {
-  border-left: 4px solid var(--danger);
-}
-.status-hero--unknown {
-  border-left: 4px solid var(--neutral);
+  --tone: var(--danger);
+  --tone-bg: var(--danger-bg);
 }
 
-.status-hero h1 {
+.status-hero__icon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  color: var(--tone);
+}
+
+.status-hero h2 {
   font-size: 22px;
 }
 
 .status-hero p {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   color: var(--text-muted);
+  font-size: 14px;
+}
+
+.service-list,
+.incident-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.service-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.service-row:last-child,
+.incident:last-child {
+  border-bottom: none;
+}
+
+.service-row__name {
+  font-weight: 500;
+}
+
+.service-row__meta {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.service-row__right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Fixed width, so the meters line up from row to row whatever the badge text is. */
+.service-row__status {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 120px;
+}
+
+.service-row__uptime {
+  min-width: 52px;
+  text-align: right;
   font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
-.sparkline {
+/* Decorative: the percentage next to it carries the value. Both must be block-level: an
+   inline span ignores width and height, which is why the fill was invisible. */
+.uptime-meter {
+  display: block;
+  width: 72px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.uptime-meter__fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+}
+
+.incident {
   display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 26px;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
 }
 
-.sparkline__bar {
-  width: 4px;
-  border-radius: 1px;
-  min-height: 3px;
+.incident__dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--neutral);
 }
 
-.uptime-bar {
-  display: flex;
-  gap: 2px;
-  height: 22px;
+.incident__dot--ongoing {
+  background: var(--danger);
+}
+.incident__dot--resolved {
+  background: var(--success);
 }
 
-.uptime-bar__segment {
+.incident__body {
+  min-width: 0;
   flex: 1;
-  border-radius: 2px;
-  min-width: 3px;
+}
+
+.incident__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
+.incident__title {
+  font-weight: 500;
+}
+
+.incident__meta {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.status-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 28px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.status-footer a {
+  color: var(--text-muted);
+}
+.status-footer a:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+@media (max-width: 520px) {
+  .status-page {
+    padding: 24px 14px 24px;
+  }
+  .status-hero {
+    padding: 16px;
+  }
+  .auth-card {
+    padding: 22px;
+  }
 }
