@@ -10,7 +10,7 @@ This is the authoritative visual and interaction spec for the SitePulse frontend
 - Dense but readable: status lists, incident timelines, response-time charts
 - Restrained accent color for interactive elements; semantic colors for status (up = green/success, down = red/error, degraded = amber/warning) — never color alone to communicate status (pair with text/icon)
 - Border-led surfaces (subtle 1px borders) over heavy drop shadows
-- Functional over decorative — no gradients, no glassmorphism, no oversized hero cards
+- Functional over decorative — no gradients, no glassmorphism, no oversized hero cards — except the landing page at `/`, a marketing surface that uses larger type and one soft glow behind the hero (web/src/pages/landing.css). Its product visuals are built from the real components with sample data, and it makes no claims the product does not back up (no customer logos, statistics or testimonials)
 
 ## 2. Major Frontend Surfaces
 

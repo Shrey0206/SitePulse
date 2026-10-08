@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Brand } from '../components/Brand';
 import { StatusBadge } from '../components/StatusBadge';
+import { StatusHeroIcon } from '../components/StatusHeroIcon';
 import { fetchPublic } from '../lib/api';
 import { absoluteTime, duration, relativeTime } from '../lib/format';
 import type { OverallStatus, StatusPage as StatusPageData } from '../lib/types';
@@ -21,32 +22,6 @@ const OVERALL_COPY: Record<OverallStatus, { headline: string; detail: string }> 
 };
 
 const REFRESH_MS = 30_000;
-
-/** Each status has its own glyph, so the hero is never distinguished by colour alone. */
-const HERO_ICON: Record<OverallStatus, React.ReactNode> = {
-  operational: <path d="m8 12.5 2.8 2.8L16 9.5" />,
-  degraded: <path d="M12 7.5v5.5M12 16.5h.01" />,
-  major_outage: <path d="m9 9 6 6m0-6-6 6" />,
-  unknown: <path d="M8.5 12h7" />,
-};
-
-function HeroIcon({ status }: { status: OverallStatus }) {
-  return (
-    <svg
-      className="status-hero__icon"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="10" />
-      {HERO_ICON[status]}
-    </svg>
-  );
-}
 
 function uptimeTone(uptime: number): 'success' | 'warning' | 'danger' {
   if (uptime >= 99) return 'success';
@@ -98,7 +73,7 @@ export function StatusPage() {
 
         {error && (
           <div className="status-hero" role="alert">
-            <HeroIcon status="unknown" />
+            <StatusHeroIcon status="unknown" />
             <div>
               <h1>Status page not found</h1>
               <p>
@@ -127,7 +102,7 @@ export function StatusPage() {
             </header>
 
             <div className={`status-hero status-hero--${data.overallStatus}`}>
-              <HeroIcon status={data.overallStatus} />
+              <StatusHeroIcon status={data.overallStatus} />
               <div>
                 <h2>{OVERALL_COPY[data.overallStatus].headline}</h2>
                 <p>{OVERALL_COPY[data.overallStatus].detail}</p>

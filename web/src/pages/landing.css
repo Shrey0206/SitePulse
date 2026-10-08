@@ -1,0 +1,709 @@
+/*
+ * Landing page. A marketing surface: larger type and more space than the app, but built on
+ * the same tokens (styles.css) so it reads as the same product. The soft glow behind the
+ * hero is the one decorative flourish; the app itself stays flat (UI_DESIGN.md §1).
+ */
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+.lp {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.lp-container {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Buttons rendered as links should not pick up the underline-on-hover of plain links. */
+.lp a:hover {
+  text-decoration: none;
+}
+
+/* ---------- Navigation ---------- */
+
+.lp-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.lp-nav__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  height: 60px;
+}
+
+.lp-nav__links {
+  display: flex;
+  gap: 28px;
+  font-size: 14px;
+}
+
+.lp-nav__links a,
+.lp-nav__signin {
+  color: var(--text-muted);
+}
+
+.lp-nav__links a:hover,
+.lp-nav__signin:hover {
+  color: var(--text);
+}
+
+.lp-nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 14px;
+}
+
+/* ---------- Hero ---------- */
+
+.lp-hero {
+  position: relative;
+  padding: 84px 0 72px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.lp-hero::before {
+  content: '';
+  position: absolute;
+  top: -140px;
+  left: 50%;
+  width: 920px;
+  height: 540px;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgb(31 111 235 / 0.22), transparent);
+  pointer-events: none;
+}
+
+.lp-hero .lp-container {
+  position: relative;
+}
+
+.lp-eyebrow {
+  display: inline-block;
+  margin: 0 0 22px;
+  padding: 4px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg-raised);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.lp-hero h1 {
+  max-width: 920px;
+  margin: 0 auto;
+  /* balance stops a one-word last line ("down.") from dangling on its own. */
+  text-wrap: balance;
+  font-size: clamp(2.1rem, 5.2vw, 3.5rem);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+}
+
+.lp-hero h1 span {
+  display: block;
+  color: var(--text-muted);
+}
+
+.lp-hero__sub {
+  max-width: 640px;
+  margin: 22px auto 0;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.lp-cta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.lp .lp-cta .btn {
+  padding: 11px 24px;
+  font-size: 15px;
+}
+
+/* ---------- Product mock-up (the real components, with sample data) ---------- */
+
+.lp-figure {
+  max-width: 980px;
+  margin: 64px auto 0;
+}
+
+.lp-figure figcaption {
+  margin-top: 14px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--text-faint);
+}
+
+.lp-window {
+  text-align: left;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.5);
+}
+
+.lp-window__bar {
+  display: flex;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--bg-inset);
+  border-bottom: 1px solid var(--border);
+}
+
+.lp-window__bar span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.lp-window__body {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  min-height: 340px;
+}
+
+.lp-side {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 10px;
+  background: var(--bg-inset);
+  border-right: 1px solid var(--border);
+}
+
+.lp-side__brand {
+  padding: 2px 8px 14px;
+}
+
+.lp-side__item {
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.lp-side__item--active {
+  background: var(--bg-hover);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.lp-pane {
+  padding: 20px 22px;
+}
+
+.lp-pane__title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.lp-pane__sub {
+  margin-top: 3px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.lp-table {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.lp-table__row {
+  display: grid;
+  grid-template-columns: 1fr 96px 56px 84px;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.lp-table__row:last-child {
+  border-bottom: none;
+}
+
+/* Grid items stretch by default, which would pull the badge out to the column width. */
+.lp-table__row .status-badge {
+  justify-self: start;
+}
+
+.lp-table__name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lp-table__name strong {
+  font-weight: 600;
+}
+
+.lp-table__name span {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lp-table__cell {
+  color: var(--text-muted);
+}
+
+.lp-table__cell--seen {
+  text-align: right;
+  color: var(--text-faint);
+}
+
+.lp-incident {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--radius);
+  background: var(--danger-bg);
+  font-size: 13px;
+}
+
+.lp-incident .incident__dot {
+  margin-top: 4px;
+}
+
+.lp-incident div {
+  display: flex;
+  flex-direction: column;
+}
+
+.lp-incident span {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ---------- Sections ---------- */
+
+.lp-section {
+  padding: 88px 0;
+}
+
+.lp-section--tint {
+  background: var(--bg-inset);
+  border-block: 1px solid var(--border);
+}
+
+.lp-h2 {
+  font-size: clamp(1.6rem, 3.4vw, 2.25rem);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+  text-align: center;
+}
+
+.lp-h2--left {
+  text-align: left;
+}
+
+.lp-lede {
+  max-width: 600px;
+  margin: 14px auto 0;
+  font-size: 17px;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.lp-lede--left {
+  margin-left: 0;
+  text-align: left;
+}
+
+/* ---------- Feature grid ---------- */
+
+.lp-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 48px;
+}
+
+.lp-feature {
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-raised);
+}
+
+.lp-feature__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg-inset);
+  color: var(--accent);
+}
+
+.lp-feature__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.lp-feature h3 {
+  margin-bottom: 6px;
+  font-size: 16px;
+}
+
+.lp-feature p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* ---------- Two-column spotlights ---------- */
+
+.lp-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: center;
+}
+
+.lp-checks {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp-checks li {
+  position: relative;
+  padding-left: 28px;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.lp-checks li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 3px;
+  width: 17px;
+  height: 17px;
+  border: 1px solid var(--success);
+  border-radius: 50%;
+  background: var(--success-bg);
+}
+
+.lp-checks li::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--success);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* An illustration of a Discord message, in Discord's own dark palette on purpose. */
+.lp-discord {
+  padding: 22px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: #313338;
+}
+
+.lp-discord__msg {
+  display: flex;
+  gap: 12px;
+}
+
+.lp-discord__msg + .lp-discord__msg {
+  margin-top: 20px;
+}
+
+.lp-discord__avatar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--accent-solid);
+  color: #fff;
+  font-weight: 700;
+}
+
+.lp-discord__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.lp-discord__who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.lp-discord__who strong {
+  color: #f2f3f5;
+}
+
+.lp-discord__tag {
+  padding: 0 5px;
+  border-radius: 3px;
+  background: #5865f2;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 15px;
+}
+
+.lp-discord__time {
+  font-size: 12px;
+  color: #a6aab0;
+}
+
+.lp-discord__embed {
+  max-width: 440px;
+  margin-top: 6px;
+  padding: 10px 14px 12px;
+  border-left: 4px solid var(--danger);
+  border-radius: 4px;
+  background: #2b2d31;
+}
+
+.lp-discord__embed--up {
+  border-left-color: var(--success);
+}
+
+.lp-discord__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f2f3f5;
+}
+
+.lp-discord__desc {
+  margin-top: 4px;
+  font-size: 14px;
+  color: #dbdee1;
+}
+
+.lp-discord__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.lp-discord__fields b {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 12px;
+  color: #f2f3f5;
+}
+
+.lp-discord__fields span {
+  color: #dbdee1;
+  word-break: break-all;
+}
+
+.lp-statusmock {
+  padding: 20px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.lp-statusmock__org {
+  margin-bottom: 14px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.lp-statusmock .status-hero {
+  margin-bottom: 14px;
+  padding: 16px 18px;
+}
+
+.lp-statusmock .status-hero h3 {
+  font-size: 17px;
+}
+
+.lp-statusmock .status-hero p {
+  margin-top: 2px;
+  font-size: 13px;
+}
+
+/* ---------- How it works ---------- */
+
+.lp-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin: 48px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp-steps__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 14px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.lp-steps h3 {
+  margin-bottom: 6px;
+  font-size: 17px;
+}
+
+.lp-steps p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* ---------- Final call to action and footer ---------- */
+
+.lp-final {
+  padding: 96px 0;
+  text-align: center;
+}
+
+.lp-final .lp-cta {
+  margin-top: 28px;
+}
+
+.lp-footer {
+  padding: 28px 0;
+  border-top: 1px solid var(--border);
+}
+
+.lp-footer__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.lp-footer nav {
+  display: flex;
+  gap: 22px;
+  font-size: 13px;
+}
+
+.lp-footer nav a {
+  color: var(--text-muted);
+}
+
+.lp-footer nav a:hover {
+  color: var(--text);
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 960px) {
+  .lp-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .lp-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 880px) {
+  .lp-nav__links {
+    display: none;
+  }
+  .lp-split {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  /* Words before pictures once the columns stack. */
+  .lp-split--reverse > :first-child {
+    order: 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .lp-container {
+    padding: 0 18px;
+  }
+  .lp-hero {
+    padding: 52px 0 44px;
+  }
+  .lp-hero__sub {
+    font-size: 16px;
+  }
+  .lp-section {
+    padding: 60px 0;
+  }
+  .lp-final {
+    padding: 64px 0;
+  }
+  .lp-grid {
+    grid-template-columns: 1fr;
+  }
+  .lp-window__body {
+    grid-template-columns: 1fr;
+  }
+  .lp-side {
+    display: none;
+  }
+  .lp-table__row {
+    grid-template-columns: 1fr auto;
+  }
+  .lp-table__cell {
+    display: none;
+  }
+  .lp-nav__actions {
+    gap: 12px;
+  }
+}

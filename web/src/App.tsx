@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import { AlertsPage } from './pages/AlertsPage';
 import { IncidentsPage } from './pages/IncidentsPage';
+import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { MonitorsPage } from './pages/MonitorsPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -55,7 +56,9 @@ export function App() {
   return (
     <AuthProvider>
       <Routes>
-        {/* Public: no auth, and outside the dashboard shell entirely. */}
+        {/* Public: no auth, and outside the dashboard shell entirely. The landing page is
+            shown to everyone, signed in or not; it adapts its buttons rather than redirecting. */}
+        <Route path="/" element={<LandingPage />} />
         <Route path="/status/:slug" element={<StatusPage />} />
 
         <Route
